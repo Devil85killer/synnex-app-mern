@@ -72,7 +72,7 @@ function Register() {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/register/user",
+        "https://synnex-backend.onrender.com/register/user",
         formData
       );
       

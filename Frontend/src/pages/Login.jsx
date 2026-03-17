@@ -43,7 +43,7 @@ function Login() {
       return;
     }
     setLoading(true);
-    const url = "http://localhost:8080/auth/login"; 
+    const url = "https://synnex-backend.onrender.com/auth/login"; 
     
     const userData = {
       email: user.email,

@@ -17,7 +17,7 @@ const Meeting = () => {
   useEffect(() => {
     const fetchMeetingLink = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/meeting');
+        const response = await axios.get('https://synnex-backend.onrender.com/api/meeting');
         
         if (response.data.status === 'success' && response.data.link) {
           setMeetingLink(response.data.link);
@@ -39,7 +39,7 @@ const Meeting = () => {
     
     try {
       // 🔥 PORT 4000 FIX KIYA
-      await axios.post('http://localhost:8080/api/meeting', {
+      await axios.post('https://synnex-backend.onrender.com/api/meeting', {
         link: newMeetingLink,
         role: user.role
       });
