@@ -18,16 +18,16 @@ let Job, Event;
 
 // Job Model Import
 try { 
-    Job = require("/src/models/Job"); 
+    Job = require("./src/models/job"); 
 } catch (e) { 
     try { Job = require("./src/models/job"); } catch (e) { console.log("Job model not found!"); }
 }
 
 // Event Model Import
 try { 
-    Event = require("./src/models/Event"); 
+    Event = require("./src/models/eventModel"); 
 } catch (e) { 
-    try { Event = require("./src/models/event"); } catch (e) { console.log("Event model not found!"); }
+    try { Event = require("./src/models/eventModel"); } catch (e) { console.log("Event model not found!"); }
 }
 
 app.use(cors());
