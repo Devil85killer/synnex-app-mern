@@ -10,24 +10,24 @@ const router = require("./src/routes");
 // 🔥 1. YAHAN TERA MEETING CONTROLLER IMPORT KIYA HAI
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
 
-// 🔥 2. NAYA: ADMIN PANEL KE LIYE USER MODEL IMPORT
+// 🔥 2. ADMIN PANEL KE LIYE USER MODEL IMPORT
 const { User } = require("./src/models/user"); 
 
-// 🔥 SMART IMPORTS: Ye Capital aur Small dono file names check karega taaki Render confuse na ho
+// 🔥 3. EXACT FILE NAMES IMPORT (Tere VS Code ke hisaab se)
 let Job, Event;
 
-// Job Model Import
+// Job Model Import (Tera file name job.js hai)
 try { 
     Job = require("./src/models/job"); 
 } catch (e) { 
-    try { Job = require("./src/models/job"); } catch (e) { console.log("Job model not found!"); }
+    console.log("Job model nahi mila, path check kar bhai!"); 
 }
 
-// Event Model Import
+// Event Model Import (Tera file name eventModel.js hai)
 try { 
     Event = require("./src/models/eventModel"); 
 } catch (e) { 
-    try { Event = require("./src/models/eventModel"); } catch (e) { console.log("Event model not found!"); }
+    console.log("Event model nahi mila, path check kar bhai!"); 
 }
 
 app.use(cors());
@@ -117,15 +117,13 @@ app.get('/api/admin/all-events', async (req, res) => {
   }
 });
 
-// 🔥 6. NAYA API: Naya Event Create karne ke liye
+// 6. Naya Event Create karne ke liye
 app.post('/api/admin/event', async (req, res) => {
     try {
         if (!Event) return res.status(400).json({ message: "Event model not found" });
         
         const eventData = req.body;
         
-        // Tere schema me 'createdBy' aur 'description' required hain. 
-        // Hum dummy admin ID daal rahe hain taaki save hone mein crash na ho.
         eventData.createdBy = new mongoose.Types.ObjectId("000000000000000000000000"); 
         if(!eventData.description) eventData.description = "Admin Event";
 
