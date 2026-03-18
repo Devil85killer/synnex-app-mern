@@ -25,14 +25,16 @@ import BulkUpload from "./Components/BulkUpload.jsx";
 import SearchPeople from "./Components/SearchPeople.jsx";
 import Meeting from "./Components/Meeting.jsx";
 import Feedback from "./Components/Feedback.jsx";
-
-// NAYA: Profile component ko import kiya hai
 import Profile from "./Components/Profile.jsx";
+
+// 🔥 NAYA: Tere Secret Admin Panel ke imports
+import AdminLogin from "./pages/AdminLogin.jsx";
+import AdminDashboard from "./pages/AdminDashboard.jsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: <Layout />, // Ye aam janta ka darwaza hai
     children: [
       {
         path: "register",
@@ -54,7 +56,6 @@ const router = createBrowserRouter([
         path: "dashboard",
         element: <Dashboard />,
       },
-      // NAYA: Profile page ka route add kar diya
       {
         path: "profile",
         element: <Profile />,
@@ -93,6 +94,18 @@ const router = createBrowserRouter([
       },
     ],
   },
+  
+  // 🔥 NAYA: SECRET ADMIN ROUTES (Layout ke bahar, ekdum alag!)
+  {
+    path: "/synnex-hq-admin",
+    element: <AdminLogin />,
+  },
+  {
+    path: "/admin-dashboard",
+    element: <AdminDashboard />,
+  },
+
+  // Ye safety ke liye hai, koi galat URL daalega toh Login pe jayega
   {
     path: "/*",
     element: <Navigate to="/login" />,
