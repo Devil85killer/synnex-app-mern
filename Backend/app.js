@@ -13,6 +13,11 @@ const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingCo
 // 🔥 2. NAYA: ADMIN PANEL KE LIYE USER MODEL IMPORT
 const { User } = require("./src/models/user"); 
 
+// Safely import Job and Event models (Taaki server crash na ho agar files miss hon)
+let Job, Event;
+try { Job = require("./src/models/job"); } catch (e) { console.log("Job model pending..."); }
+try { Event = require("./src/models/event"); } catch (e) { console.log("Event model pending..."); }
+
 app.use(cors());
 app.use(
   express.json({
@@ -34,10 +39,13 @@ app.use(cookiesParser());
 app.post('/api/meeting', saveMeetingLink);
 app.get('/api/meeting', getMeetingLink);
 
-// 🔥 3. NAYA: ADMIN API - SAARE USERS LAAKAR FRONTEND KO DENE KE LIYE
+// ============================================================
+// 🕵️‍♂️ ADMIN PANEL KE SAARE NAYE APIS (DO NOT TOUCH)
+// ============================================================
+
+// 1. Saare users laakar frontend ko dene ke liye
 app.get('/api/admin/all-users', async (req, res) => {
   try {
-    // Database se saare users nikalega, par unka password hide kar dega
     const users = await User.find({}).select("-password"); 
     res.status(200).json(users);
   } catch (error) {
@@ -45,6 +53,59 @@ app.get('/api/admin/all-users', async (req, res) => {
     res.status(500).json({ message: "Error fetching users" });
   }
 });
+
+// 2. User ko Delete karne ke liye
+app.delete('/api/admin/user/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+    await User.findByIdAndDelete(userId);
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ message: "Failed to delete user" });
+  }
+});
+
+// 3. Saari Jobs laane ke liye
+app.get('/api/admin/all-jobs', async (req, res) => {
+  try {
+    if (!Job) return res.status(200).json([]); // Agar model nahi hai toh khali array bhej do
+    const jobs = await Job.find().sort({ createdAt: -1 });
+    res.status(200).json(jobs);
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ message: "Failed to fetch jobs" });
+  }
+});
+
+// 4. Job Approve/Delete karne ke liye
+app.put('/api/admin/job/:id/:action', async (req, res) => {
+    try {
+        if (!Job) return res.status(400).json({ message: "Job model not found" });
+        const { id, action } = req.params;
+        
+        if (action === 'delete') {
+            await Job.findByIdAndDelete(id);
+            return res.status(200).json({ message: "Job deleted" });
+        }
+        res.status(400).json({ message: "Action not supported yet" });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to process job action" });
+    }
+});
+
+// 5. Saare Events laane ke liye
+app.get('/api/admin/all-events', async (req, res) => {
+  try {
+    if (!Event) return res.status(200).json([]);
+    const events = await Event.find().sort({ date: 1 });
+    res.status(200).json(events);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch events" });
+  }
+});
+
+// ============================================================
 
 app.use("/", router);
 
