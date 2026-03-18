@@ -10,6 +10,9 @@ const router = require("./src/routes");
 // 🔥 1. YAHAN TERA MEETING CONTROLLER IMPORT KIYA HAI
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
 
+// 🔥 2. NAYA: ADMIN PANEL KE LIYE USER MODEL IMPORT
+const { User } = require("./src/models/user"); 
+
 app.use(cors());
 app.use(
   express.json({
@@ -27,9 +30,21 @@ app.use(
 app.use(express.static(`${__dirname}/public`));
 app.use(cookiesParser());
 
-// 🔥 2. YAHAN TERE MEETING KE ROUTES JOD DIYE HAIN (router se theek pehle)
+// 🔥 TERE MEETING KE ROUTES
 app.post('/api/meeting', saveMeetingLink);
 app.get('/api/meeting', getMeetingLink);
+
+// 🔥 3. NAYA: ADMIN API - SAARE USERS LAAKAR FRONTEND KO DENE KE LIYE
+app.get('/api/admin/all-users', async (req, res) => {
+  try {
+    // Database se saare users nikalega, par unka password hide kar dega
+    const users = await User.find({}).select("-password"); 
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users for admin:", error);
+    res.status(500).json({ message: "Error fetching users" });
+  }
+});
 
 app.use("/", router);
 
