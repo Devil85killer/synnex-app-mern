@@ -13,10 +13,22 @@ const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingCo
 // 🔥 2. NAYA: ADMIN PANEL KE LIYE USER MODEL IMPORT
 const { User } = require("./src/models/user"); 
 
-// Safely import Job and Event models 
+// 🔥 SMART IMPORTS: Ye Capital aur Small dono file names check karega taaki Render confuse na ho
 let Job, Event;
-try { Job = require("./src/models/job"); } catch (e) { console.log("Job model pending..."); }
-try { Event = require("./src/models/event"); } catch (e) { console.log("Event model pending..."); }
+
+// Job Model Import
+try { 
+    Job = require("./src/models/Job"); 
+} catch (e) { 
+    try { Job = require("./src/models/job"); } catch (e) { console.log("Job model not found!"); }
+}
+
+// Event Model Import
+try { 
+    Event = require("./src/models/Event"); 
+} catch (e) { 
+    try { Event = require("./src/models/event"); } catch (e) { console.log("Event model not found!"); }
+}
 
 app.use(cors());
 app.use(
