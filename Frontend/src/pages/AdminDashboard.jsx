@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   UsersIcon, 
   BriefcaseIcon, 
@@ -7,13 +7,17 @@ import {
   ArrowRightOnRectangleIcon 
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; // 🔥 Data fetch karne ke liye axios import kiya
 
 function AdminDashboard() {
   const navigate = useNavigate();
-  // 🔥 Yahan humne state add kiya tab switch karne ke liye
   const [activeTab, setActiveTab] = useState('dashboard'); 
   
-  // Dummy Stats
+  // 🔥 Asli Data store karne ke liye naye states
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Dummy Stats (Baad mein isko bhi dynamic karenge)
   const stats = [
     { name: 'Total Students', value: '450', icon: UsersIcon, color: 'bg-blue-500' },
     { name: 'Active Alumni', value: '120', icon: ChartBarIcon, color: 'bg-green-500' },
@@ -21,7 +25,28 @@ function AdminDashboard() {
     { name: 'Upcoming Events', value: '8', icon: CalendarIcon, color: 'bg-orange-500' },
   ];
 
-  // 🔥 Ye function decide karega ki main screen par kya dikhana hai
+  // 🔥 API call function (Database se users laane ke liye)
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const response = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users');
+      setUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Jab bhi 'users' tab open hoga, tabhi data fetch hoga
+  useEffect(() => {
+    if (activeTab === 'users') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+
+  // Ye function decide karega ki main screen par kya dikhana hai
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -40,24 +65,74 @@ function AdminDashboard() {
                 </div>
               ))}
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div className="p-6 border-b border-gray-500/10 flex justify-between items-center">
-                <h3 className="font-bold text-gray-800">Recent Pending Approvals</h3>
-                <button className="text-sm text-black font-bold hover:underline">View All</button>
-              </div>
-              <div className="p-6">
-                <p className="text-gray-500">Approvals table data will load here...</p>
-              </div>
-            </div>
           </>
         );
+
+      // 🔥 NAYA: Asli Users ki Table
       case 'users':
         return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
-            <h2 className="text-2xl font-bold mb-4">Manage Users</h2>
-            <p className="text-gray-500">Yahan hum saare students, alumni aur teachers ki list dikhayenge aur unhe delete/edit karne ka option denge.</p>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">Manage Users</h2>
+              <span className="bg-blue-100 text-blue-800 text-sm font-bold px-4 py-1 rounded-full">
+                Total: {users.length}
+              </span>
+            </div>
+
+            {loadingUsers ? (
+              <div className="flex justify-center items-center h-40">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-black"></div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                      <th className="p-4 font-bold">Name</th>
+                      <th className="p-4 font-bold">Email</th>
+                      <th className="p-4 font-bold">Role</th>
+                      <th className="p-4 font-bold">Status</th>
+                      <th className="p-4 font-bold text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-gray-700">
+                    {users.map((user, index) => (
+                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                        <td className="p-4 font-medium text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </td>
+                        <td className="p-4">{user.email}</td>
+                        <td className="p-4 capitalize font-medium">{user.role}</td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${
+                            user.isApproved 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {user.isApproved ? 'Approved' : 'Pending'}
+                          </span>
+                        </td>
+                        <td className="p-4 text-center">
+                          <button className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded transition hover:bg-red-100">
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {users.length === 0 && (
+                      <tr>
+                        <td colSpan="5" className="p-4 text-center text-gray-500 py-10">
+                          No users found in database.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         );
+
       case 'jobs':
         return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
