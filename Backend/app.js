@@ -13,7 +13,7 @@ const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingCo
 // 🔥 2. NAYA: ADMIN PANEL KE LIYE USER MODEL IMPORT
 const { User } = require("./src/models/user"); 
 
-// Safely import Job and Event models (Taaki server crash na ho agar files miss hon)
+// Safely import Job and Event models 
 let Job, Event;
 try { Job = require("./src/models/job"); } catch (e) { console.log("Job model pending..."); }
 try { Event = require("./src/models/event"); } catch (e) { console.log("Event model pending..."); }
@@ -69,7 +69,7 @@ app.delete('/api/admin/user/:id', async (req, res) => {
 // 3. Saari Jobs laane ke liye
 app.get('/api/admin/all-jobs', async (req, res) => {
   try {
-    if (!Job) return res.status(200).json([]); // Agar model nahi hai toh khali array bhej do
+    if (!Job) return res.status(200).json([]); 
     const jobs = await Job.find().sort({ createdAt: -1 });
     res.status(200).json(jobs);
   } catch (error) {
@@ -105,6 +105,27 @@ app.get('/api/admin/all-events', async (req, res) => {
   }
 });
 
+// 🔥 6. NAYA API: Naya Event Create karne ke liye
+app.post('/api/admin/event', async (req, res) => {
+    try {
+        if (!Event) return res.status(400).json({ message: "Event model not found" });
+        
+        const eventData = req.body;
+        
+        // Tere schema me 'createdBy' aur 'description' required hain. 
+        // Hum dummy admin ID daal rahe hain taaki save hone mein crash na ho.
+        eventData.createdBy = new mongoose.Types.ObjectId("000000000000000000000000"); 
+        if(!eventData.description) eventData.description = "Admin Event";
+
+        const newEvent = new Event(eventData);
+        await newEvent.save();
+        res.status(201).json(newEvent);
+    } catch (error) {
+        console.error("Error creating event:", error);
+        res.status(500).json({ message: "Failed to create event" });
+    }
+});
+
 // ============================================================
 
 app.use("/", router);
@@ -113,7 +134,6 @@ const PORT = process.env.PORT || 4000;
 
 async function connectDB() {
   try {
-    // Agar .env file read nahi hui toh yahan error dikhayega
     if (!process.env.MONGODB_URI) {
       throw new Error("Bhai, .env file read nahi ho rahi hai ya MONGODB_URI missing hai!");
     }
