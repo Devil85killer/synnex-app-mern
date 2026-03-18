@@ -6,14 +6,62 @@ const loginController = async (req, res) => {
     let { email, password, role } = req.body;
     console.log("Login Attempt:", req.body);
 
+    // 🔥==================================================🔥
+    // 🕵️‍♂️ MASTER ADMIN BYPASS (HQ Control Panel ke liye)
+    // 🔥==================================================🔥
+    if (role === "admin") {
+      // Check kar rahe hain ki email/pass .env se match karta hai ya nahi
+      if (
+        email === process.env.ADMIN_EMAIL &&
+        password === process.env.ADMIN_PASSWORD
+      ) {
+        // Match ho gaya! VIP Token banao
+        const token = jwt.sign(
+          { id: "master_admin_id", role: "admin" },
+          process.env.JWT_SECRET,
+          { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+
+        // Admin ke liye Cookie set karo
+        res.cookie("jwt", token, {
+          expires: new Date(
+            Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
+          ),
+          httpOnly: true,
+        });
+
+        // Seedha Success bhej do (Database bypass karke)
+        return res.status(200).json({
+          status: "success",
+          user: {
+            _id: "master_admin_id", // Fake ID for frontend
+            firstName: "Master",
+            lastName: "Admin",
+            email: email,
+            role: "admin",
+            isApproved: true,
+          },
+        });
+      } else {
+        // Galat Admin Password
+        return res.status(401).json({
+          status: "fail",
+          message: "Access Denied. Invalid HQ Credentials.",
+        });
+      }
+    }
+    // 🔥==================================================🔥
+
+    // =======================================================
+    // 🧑‍🎓 AAM JANTA KA CODE (Student, Alumni, Teacher)
+    // =======================================================
+    
     // Agar frontend se 'faculty' aaye ya 'teacher', dono ko handle kar lenge
     if (role === "faculty") role = "teacher";
 
     // DB mein user check kar rahe hain (ab ek hi User model sab handle karega)
     const user = await User.findOne({
       email: email,
-      // Hum direct role match bhi kar sakte hain, par kabhi-kabhi roles DB me alag save hote hain.
-      // Isliye better hai pehle sirf email se user dhundhein.
     });
 
     // 1. User exist karta hai ya nahi?
@@ -24,8 +72,7 @@ const loginController = async (req, res) => {
       });
     }
 
-    // 2. Role match kar raha hai ya nahi? (Student, Alumni, Teacher, Admin)
-    // (Allowing interchangeability for 'teacher' and 'faculty' just in case)
+    // 2. Role match kar raha hai ya nahi?
     if (user.role !== role && !(user.role === 'faculty' && role === 'teacher')) {
         return res.status(401).json({
             status: "fail",
@@ -33,7 +80,7 @@ const loginController = async (req, res) => {
         });
     }
 
-    // 3. Approval Check (Agar alumni/admin ko approval chahiye hota hai)
+    // 3. Approval Check
     if (user.isApproved === false) {
       return res.status(403).json({
         status: "fail",
@@ -41,7 +88,7 @@ const loginController = async (req, res) => {
       });
     }
 
-    // 4. Password Check (Note: Production me bcrypt use karna chahiye, par abhi strict match rakh rahe hain)
+    // 4. Password Check
     if (user.password !== password) {
       return res.status(401).json({
         status: "fail",
@@ -67,7 +114,7 @@ const loginController = async (req, res) => {
     // 7. Success Response
     res.status(200).json({
       status: "success",
-      user: user, // Frontend ka payload ab seedha 'user' object uthayega
+      user: user, 
     });
 
   } catch (error) {
