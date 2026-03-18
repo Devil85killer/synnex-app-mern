@@ -18,7 +18,7 @@ let Job, Event;
 
 // Job Model Import
 try { 
-    Job = require("./src/models/Job"); 
+    Job = require("/src/models/Job"); 
 } catch (e) { 
     try { Job = require("./src/models/job"); } catch (e) { console.log("Job model not found!"); }
 }
