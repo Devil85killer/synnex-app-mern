@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+// 🔥 1. IMPORT BCRYPTJS HERE
+const bcrypt = require("bcryptjs");
 
 const UserSchema = new mongoose.Schema({
   email: {
@@ -36,7 +38,26 @@ const UserSchema = new mongoose.Schema({
     default: "mumbai" // Failsafe default for existing users in the DB
   }
 
-}, { timestamps: true }); // timestamps automatically handle created_at and updated_at
+}, { timestamps: true }); 
+
+// =================================================================
+// 🔥 2. NAYA CHOWKIDAAR (PRE-SAVE HOOK) JO PASSWORD KO HASH KAREGA
+// =================================================================
+UserSchema.pre("save", async function (next) {
+  // Agar password modify nahi hua (jaise profile update mein), toh skip kar do
+  if (!this.isModified("password")) {
+    return next();
+  }
+
+  // Agar naya password ban raha hai, toh hash karo
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const User = mongoose.model("User", UserSchema);
 
