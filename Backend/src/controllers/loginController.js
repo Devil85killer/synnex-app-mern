@@ -1,5 +1,7 @@
 const { User } = require("../models/user");
 const jwt = require("jsonwebtoken");
+// 🔥 NAYA: bcryptjs import kiya
+const bcrypt = require("bcryptjs");
 
 const loginController = async (req, res) => {
   try {
@@ -20,14 +22,13 @@ const loginController = async (req, res) => {
           { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
-        // Admin Cookie Configuration
         res.cookie("jwt", token, {
           expires: new Date(
             Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
           ),
           httpOnly: true,
-          secure: true,      // REQUIRED for cross-domain cookies
-          sameSite: "none",  // REQUIRED for cross-domain cookies
+          secure: true,      
+          sameSite: "none",  
         });
 
         return res.status(200).json({
@@ -84,8 +85,9 @@ const loginController = async (req, res) => {
       });
     }
 
-    // 4. Password Check
-    if (user.password !== password) {
+    // 4. 🔥 NAYA: Password Check using bcrypt.compare
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({
         status: "fail",
         message: "Incorrect password",
@@ -105,8 +107,8 @@ const loginController = async (req, res) => {
         Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000
       ),
       httpOnly: true,
-      secure: true,      // REQUIRED for cross-domain cookies
-      sameSite: "none",  // REQUIRED for cross-domain cookies
+      secure: true,      
+      sameSite: "none",  
     });
 
     // 7. Success Response
