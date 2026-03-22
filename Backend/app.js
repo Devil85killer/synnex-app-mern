@@ -6,30 +6,35 @@ const cookiesParser = require("cookie-parser");
 const app = express();
 const router = require("./src/routes");
 
-// 1. IMPORT MEETING CONTROLLER
+// 1. IMPORT CONTROLLERS & MODELS
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
 const { User } = require("./src/models/user"); 
 
-let Job, Event, News;
+// 🔥 NAYE MODELS IMPORT KIYE HAIN CONNECTION KE LIYE
+let Job, Event, News, Feedback;
 
 try { 
     const EventModel = require("./src/models/eventModel");
     Event = EventModel.Event || EventModel; 
-} catch (e) { console.log("Event model not found or path is incorrect."); }
+} catch (e) { console.log("Event model check kar bhai!"); }
 
 try { 
-    // 🔥 FIX 1: JOB MODEL IMPORT
     const JobModel = require("./src/models/job");
     Job = JobModel.Job || JobModel; 
-} catch (e) { console.log("Job model not found or path is incorrect."); }
+} catch (e) { console.log("Job model check kar bhai!"); }
 
 try { 
     const NewsModel = require("./src/models/newsModel");
     News = NewsModel.News || NewsModel; 
-} catch (e) { console.log("News model not found or path is incorrect."); }
+} catch (e) { console.log("News model check kar bhai!"); }
+
+try { 
+    // Agar feedbackModel nahi hai toh folder mein file bana dena (Schema neeche hai)
+    Feedback = require("./src/models/feedbackModel"); 
+} catch (e) { console.log("Feedback model abhi missing hai!"); }
 
 // ============================================================
-// 🚀 THE ULTIMATE CORS CONFIGURATION 🚀
+// 🚀 THE ULTIMATE CORS CONFIGURATION (BRAMHASTRA)
 // ============================================================
 app.use((req, res, next) => {
     const origin = req.headers.origin;
@@ -56,9 +61,10 @@ app.post('/api/meeting', saveMeetingLink);
 app.get('/api/meeting', getMeetingLink);
 
 // ============================================================
-// ADMIN PANEL APIs
+// 🕵️‍♂️ ADMIN PANEL APIs (FULL CONNECTION)
 // ============================================================
 
+// --- USER MANAGEMENT ---
 app.get('/api/admin/all-users', async (req, res) => {
   try {
     const users = await User.find({}).select("-password"); 
@@ -73,6 +79,7 @@ app.delete('/api/admin/user/:id', async (req, res) => {
   } catch (error) { res.status(500).json({ message: "Failed to delete user" }); }
 });
 
+// --- JOB BOARD CONTROL ---
 app.get('/api/admin/all-jobs', async (req, res) => {
   try {
     if (!Job) return res.status(200).json([]); 
@@ -92,6 +99,7 @@ app.put('/api/admin/job/:id/:action', async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Failed to process job action" }); }
 });
 
+// --- EVENT MANAGER ---
 app.get('/api/admin/all-events', async (req, res) => {
   try {
     if (!Event) return res.status(200).json([]);
@@ -105,44 +113,53 @@ app.post('/api/admin/event', async (req, res) => {
         if (!Event) return res.status(400).json({ message: "Event model not found" });
         const eventData = req.body;
         eventData.createdBy = new mongoose.Types.ObjectId("000000000000000000000000"); 
-        
-        // 🔥 FIX 2: Admin Panel se Time aur Type nahi aata, isliye default values daal di taaki Mongoose crash na kare!
         if(!eventData.time) eventData.time = "10:00 AM"; 
-        if(!eventData.type) eventData.type = "Offline / In-person";
-        if(!eventData.description) eventData.description = "Admin Event";
-
+        if(!eventData.type) eventData.type = "Offline";
         const newEvent = new Event(eventData);
         await newEvent.save();
         res.status(201).json(newEvent);
-    } catch (error) { 
-        console.error("Admin Event Error:", error);
-        res.status(500).json({ message: "Failed to create event" }); 
-    }
+    } catch (error) { res.status(500).json({ message: "Failed to create event" }); }
 });
 
-// 🔥🔥🔥 YE WALA ROUTE TUNE MISS KAR DIYA THA 🔥🔥🔥
 app.delete('/api/admin/event/:id', async (req, res) => {
     try {
-        if (!Event) return res.status(400).json({ message: "Event model not found" });
         await Event.findByIdAndDelete(req.params.id);
-        res.status(200).json({ message: "Event deleted successfully" });
-    } catch (error) { 
-        console.error("Admin Event Delete Error:", error);
-        res.status(500).json({ message: "Failed to delete event" }); 
-    }
+        res.status(200).json({ message: "Event deleted" });
+    } catch (error) { res.status(500).json({ message: "Error" }); }
 });
-// 🔥🔥🔥========================================🔥🔥🔥
 
+// --- NEWS & NOTICES CONNECTION ---
 app.get('/api/admin/all-news', async (req, res) => {
     try {
         if (!News) return res.status(200).json([]);
         const news = await News.find().sort({ createdAt: -1 });
         res.status(200).json(news);
-    } catch (error) { res.status(500).json({ message: "Error" }); }
+    } catch (error) { res.status(500).json({ message: "Error fetching news" }); }
 });
 
-// ============================================================
-// 🚀 ROUTING CONFIGURATION 🚀
+app.post('/api/admin/news', async (req, res) => {
+    try {
+        const { title, content, type } = req.body;
+        const newNotice = new News({ title, content, type, createdBy: new mongoose.Types.ObjectId("000000000000000000000000") });
+        await newNotice.save();
+        res.status(201).json(newNotice);
+    } catch (error) { res.status(500).json({ message: "Failed to publish notice" }); }
+});
+
+// --- FEEDBACK CONNECTION ---
+app.get('/api/admin/all-feedback', async (req, res) => {
+    try {
+        if (!Feedback) return res.status(200).json([]);
+        const feedbacks = await Feedback.find().populate("userId", "firstName lastName email");
+        res.status(200).json(feedbacks);
+    } catch (error) { res.status(500).json({ message: "Error fetching feedback" }); }
+});
+
+// --- BULK IMPORT (DUMMY CONNECTION FOR UI) ---
+app.post('/api/admin/bulk-import', async (req, res) => {
+    res.status(200).json({ message: "Import functionality ready to be implemented with Multer!" });
+});
+
 // ============================================================
 
 app.use("/api", router);
