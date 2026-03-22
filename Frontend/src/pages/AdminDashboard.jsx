@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  UsersIcon, BriefcaseIcon, CalendarIcon, ChartBarIcon, ArrowRightOnRectangleIcon 
+  UsersIcon, BriefcaseIcon, CalendarIcon, ChartBarIcon, ArrowRightOnRectangleIcon,
+  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, ArrowUpTrayIcon 
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// YAHAN authService IMPORT KIYA HAI SECURITY KE LIYE
 import { getLoggedIn, getUserRole } from '../services/authService';
 
 function AdminDashboard() {
@@ -21,19 +21,16 @@ function AdminDashboard() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Event Modal States
   const [showEventModal, setShowEventModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', description: '' });
 
-  // SECURITY CHECK: Is the user an Admin?
   useEffect(() => {
     if (!loggedIn || userRole !== 'admin') {
       alert("Access Denied: Admin privileges required.");
-      navigate('/dashboard'); // Kick normal users out
+      navigate('/dashboard'); 
     }
   }, [loggedIn, userRole, navigate]);
 
-  // API Calls
   const fetchUsers = async () => {
     try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users'); setUsers(res.data); } catch (err) {}
   };
@@ -45,14 +42,12 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    // Only fetch data if the user is actually an admin
     if (userRole === 'admin') {
       setLoading(true);
       Promise.all([fetchUsers(), fetchJobs(), fetchEvents()]).finally(() => setLoading(false));
     }
   }, [userRole]);
 
-  // Action Handlers
   const handleDeleteUser = async (userId, userName) => {
     if (window.confirm(`Warning: Delete ${userName}? This cannot be undone.`)) {
       try {
@@ -71,12 +66,23 @@ function AdminDashboard() {
     }
   };
 
+  // NEW: Delete Event Handler
+  const handleDeleteEvent = async (eventId, eventTitle) => {
+    if(window.confirm(`Delete event: ${eventTitle}?`)) {
+      try {
+        // Adjust this URL if your delete route is different in your backend router
+        await axios.delete(`https://synnex-backend.onrender.com/api/admin/event/${eventId}`, { withCredentials: true });
+        setEvents(events.filter(e => e._id !== eventId));
+      } catch(error) { alert("Failed to delete event."); }
+    }
+  };
+
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
       const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent, {
-    withCredentials: true
-});
+        withCredentials: true
+      });
       setEvents([...events, res.data]); 
       setShowEventModal(false); 
       setNewEvent({ title: '', date: '', location: '', description: '' }); 
@@ -180,7 +186,11 @@ function AdminDashboard() {
                                <h3 className="font-bold text-lg text-black">{event.title}</h3>
                                <p className="text-sm text-gray-600 font-medium">{new Date(event.date).toDateString()} • {event.location}</p>
                              </div>
-                             <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
+                             {/* ADDED: Delete Button next to Upcoming badge */}
+                             <div className="flex items-center space-x-3">
+                                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
+                                <button onClick={() => handleDeleteEvent(event._id, event.title)} className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded font-bold text-sm transition">Delete</button>
+                             </div>
                          </div>
                      ))}
                  </div>
@@ -204,7 +214,6 @@ function AdminDashboard() {
                       <label className="block text-sm font-bold text-gray-700 mb-1">Location / Venue</label>
                       <input type="text" required value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="e.g. Main Auditorium" />
                     </div>
-                    {/* ADDED DESCRIPTION FIELD */}
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
                       <textarea required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="Event details..." rows="3"></textarea>
@@ -219,12 +228,32 @@ function AdminDashboard() {
             )}
           </div>
         );
+
+      // NEW: Added switch cases for the new sidebar items
+      case 'news':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
+            <h2 className="text-2xl font-bold text-gray-400">News & Notices Panel (Coming Soon)</h2>
+          </div>
+        );
+      case 'feedback':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
+            <h2 className="text-2xl font-bold text-gray-400">Feedback Dashboard (Coming Soon)</h2>
+          </div>
+        );
+      case 'bulk-import':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
+            <h2 className="text-2xl font-bold text-gray-400">Bulk Import Tool (Coming Soon)</h2>
+          </div>
+        );
+
       default:
         return <div>Select a tab</div>;
     }
   };
 
-  // If not logged in or not admin, return null so nothing renders while redirecting
   if (!loggedIn || userRole !== 'admin') {
       return null; 
   }
@@ -238,7 +267,7 @@ function AdminDashboard() {
           SYNNEX <span className="text-sm font-light block text-gray-400">Admin Panel</span>
         </div>
         
-        <nav className="flex-1 mt-6 px-4 space-y-2">
+        <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto">
           <button onClick={() => setActiveTab('dashboard')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'dashboard' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
             <ChartBarIcon className="h-5 w-5 mr-3" /> Dashboard
           </button>
@@ -251,6 +280,18 @@ function AdminDashboard() {
           <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
             <CalendarIcon className="h-5 w-5 mr-3" /> Event Manager
           </button>
+          
+          {/* NEW: Added Sidebar Options */}
+          <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+            <DocumentTextIcon className="h-5 w-5 mr-3" /> News & Notices
+          </button>
+          <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+            <ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3" /> User Feedback
+          </button>
+          <button onClick={() => setActiveTab('bulk-import')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'bulk-import' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+            <ArrowUpTrayIcon className="h-5 w-5 mr-3" /> Bulk Import
+          </button>
+
         </nav>
 
         <div className="p-4 border-t border-gray-800">
@@ -268,6 +309,9 @@ function AdminDashboard() {
             {activeTab === 'users' && 'User Management'}
             {activeTab === 'jobs' && 'Job Board Control'}
             {activeTab === 'events' && 'Event Dashboard'}
+            {activeTab === 'news' && 'News & Notices Control'}
+            {activeTab === 'feedback' && 'System Feedback'}
+            {activeTab === 'bulk-import' && 'Bulk Data Import'}
           </h1>
           <div className="flex items-center space-x-4">
             <span className="text-sm text-gray-500 font-medium">Admin Mode</span>
