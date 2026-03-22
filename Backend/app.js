@@ -18,7 +18,7 @@ try {
 } catch (e) { console.log("Event model not found or path is incorrect."); }
 
 try { 
-    // 🔥 FIX 1: JOB MODEL IMPORT THEEK KIYA HAI (Taki Admin mein Jobs dikhein)
+    // 🔥 FIX 1: JOB MODEL IMPORT
     const JobModel = require("./src/models/job");
     Job = JobModel.Job || JobModel; 
 } catch (e) { console.log("Job model not found or path is incorrect."); }
@@ -119,6 +119,19 @@ app.post('/api/admin/event', async (req, res) => {
         res.status(500).json({ message: "Failed to create event" }); 
     }
 });
+
+// 🔥🔥🔥 YE WALA ROUTE TUNE MISS KAR DIYA THA 🔥🔥🔥
+app.delete('/api/admin/event/:id', async (req, res) => {
+    try {
+        if (!Event) return res.status(400).json({ message: "Event model not found" });
+        await Event.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Event deleted successfully" });
+    } catch (error) { 
+        console.error("Admin Event Delete Error:", error);
+        res.status(500).json({ message: "Failed to delete event" }); 
+    }
+});
+// 🔥🔥🔥========================================🔥🔥🔥
 
 app.get('/api/admin/all-news', async (req, res) => {
     try {
