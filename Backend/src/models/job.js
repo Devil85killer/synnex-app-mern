@@ -1,4 +1,4 @@
-// models/Job.js
+// models/job.js
 const mongoose = require("mongoose");
 
 const jobSchema = new mongoose.Schema(
@@ -7,20 +7,29 @@ const jobSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    company: {        // 🔥 Frontend se aane wala company name
+      type: String,
+      required: true,
+    },
+    location: {       // 🔥 Frontend se aane wali location
+      type: String,
+    },
+    type: {           // 🔥 Frontend se aane wala job type
+      type: String,
+    },
     description: {
       type: String,
       required: true,
     },
     vacancy: {
       type: Number,
-      required: true,
+      default: 1,     // 🔥 'required: true' hata diya taaki crash na ho, aur default 1 set kar diya
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Assuming you have a User model
+      ref: "User", 
       required: true,
     },
-    // Add more fields as needed
   },
   {
     timestamps: true,
