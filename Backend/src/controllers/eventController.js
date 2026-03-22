@@ -1,5 +1,8 @@
 // controllers/eventController.js
-const { Event } = require("../models/eventModel");
+
+// 🔥 SAFELY IMPORT MODEL (Crash se bachane ke liye bramhastra)
+const EventModel = require("../models/eventModel");
+const Event = EventModel.Event || EventModel;
 
 // Controller to create an event (Restricted to Teacher, Faculty, Alumni, Admin)
 const createEventController = async (req, res) => {
@@ -15,7 +18,9 @@ const createEventController = async (req, res) => {
 
     // FRONTEND SE AANE WALE SAARE FIELDS NIKAL LIYE
     const { title, date, time, location, type, description } = req.body;
-    const createdBy = req.user._id; 
+    
+    // SAFE USER ID CHECK (JWT se jo bhi format mein aaye)
+    const createdBy = req.user._id || req.user.id; 
 
     // DATABASE MEIN SAVE
     const event = await Event.create({
@@ -47,10 +52,9 @@ const createEventController = async (req, res) => {
 const getAllEventsController = async (req, res) => {
   try {
     // Populate added so frontend knows who posted it
-    const events = await Event.find().populate(
-      "createdBy",
-      "firstName lastName role" 
-    ); 
+    const events = await Event.find()
+      .populate("createdBy", "firstName lastName role")
+      .sort({ date: 1 }); // Events ko date ke hisaab se sort kar diya
 
     res.status(200).json({
       status: "success",
@@ -77,8 +81,11 @@ const deleteEventController = async (req, res) => {
       return res.status(404).json({ status: "fail", message: "Event not found." });
     }
 
+    // SAFE USER ID CHECK
+    const userId = req.user._id || req.user.id;
+
     // SECURITY CHECK: Only Admin can delete any event (or the original creator)
-    if (req.user.role !== "admin" && event.createdBy.toString() !== req.user._id.toString()) {
+    if (req.user.role !== "admin" && event.createdBy.toString() !== userId.toString()) {
       return res.status(403).json({
         status: "fail",
         message: "Access Denied: Only Admins can delete events.",

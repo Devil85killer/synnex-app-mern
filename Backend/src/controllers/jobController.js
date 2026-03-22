@@ -1,5 +1,8 @@
 // controllers/jobController.js
-const { Job } = require("../models/job");
+
+// 🔥 SAFELY IMPORT MODEL (Crash-proof import)
+const JobModel = require("../models/job");
+const Job = JobModel.Job || JobModel;
 
 // Controller to create a job (Restricted to Alumni and Admin)
 const createJobController = async (req, res) => {
@@ -12,11 +15,18 @@ const createJobController = async (req, res) => {
       });
     }
 
-    const { title, description } = req.body;
-    const createdBy = req.user.id; 
+    // EXTRACTION: Added all the missing fields coming from your frontend
+    const { title, company, location, type, description } = req.body;
+    
+    // SAFE USER ID CHECK
+    const createdBy = req.user._id || req.user.id; 
 
+    // DATABASE SAVE
     const job = await Job.create({
       title,
+      company,      // Added company
+      location,     // Added location
+      type,         // Added job type (Full-time, etc.)
       description,
       createdBy,
     });
@@ -39,7 +49,11 @@ const createJobController = async (req, res) => {
 // Controller to get all jobs
 const getAllJobsController = async (req, res) => {
   try {
-    const jobs = await Job.find().populate("createdBy", "email role name"); 
+    // Added sorting so newest jobs show up first, and populated more user details
+    const jobs = await Job.find()
+      .populate("createdBy", "email role firstName lastName")
+      .sort({ createdAt: -1 }); 
+
     res.status(200).json({
       status: "success",
       data: {
@@ -55,7 +69,7 @@ const getAllJobsController = async (req, res) => {
   }
 };
 
-// NEW: Controller to delete a job (Admin super-power)
+// Controller to delete a job (Admin super-power)
 const deleteJobController = async (req, res) => {
   try {
     const jobId = req.params.id;
@@ -65,8 +79,11 @@ const deleteJobController = async (req, res) => {
       return res.status(404).json({ status: "fail", message: "Job not found." });
     }
 
+    // SAFE USER ID CHECK
+    const userId = req.user._id || req.user.id;
+
     // SECURITY CHECK: Only Admin can delete any job (or the original creator)
-    if (req.user.role !== "admin" && job.createdBy.toString() !== req.user.id) {
+    if (req.user.role !== "admin" && job.createdBy.toString() !== userId.toString()) {
       return res.status(403).json({
         status: "fail",
         message: "Access Denied: Only Admins can delete jobs.",
