@@ -5,7 +5,6 @@ import {
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
 import { getLoggedIn, getUserRole } from '../services/authService';
 
 function AdminDashboard() {
@@ -15,39 +14,50 @@ function AdminDashboard() {
   const userRole = role?.toLowerCase();
 
   const [activeTab, setActiveTab] = useState('dashboard'); 
-  
   const [users, setUsers] = useState([]);
   const [jobs, setJobs] = useState([]);
   const [events, setEvents] = useState([]);
+  const [news, setNews] = useState([]); 
+  const [feedbacks, setFeedbacks] = useState([]); 
   const [loading, setLoading] = useState(false);
 
+  // Modals States
   const [showEventModal, setShowEventModal] = useState(false);
+  const [showNewsModal, setShowNewsModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', description: '' });
+  const [newNotice, setNewNotice] = useState({ title: '', content: '', type: 'Notice' });
 
   useEffect(() => {
     if (!loggedIn || userRole !== 'admin') {
-      alert("Access Denied: Admin privileges required.");
-      navigate('/dashboard'); 
+      navigate('/login'); 
     }
   }, [loggedIn, userRole, navigate]);
 
+  // APIs Functions
   const fetchUsers = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users'); setUsers(res.data); } catch (err) {}
+    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); setUsers(res.data); } catch (err) {}
   };
   const fetchJobs = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs'); setJobs(res.data); } catch (err) {}
+    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {}
   };
   const fetchEvents = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events'); setEvents(res.data); } catch (err) {}
+    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {}
+  };
+  const fetchNews = async () => {
+    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {}
+  };
+  const fetchFeedbacks = async () => {
+    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); setFeedbacks(res.data); } catch (err) {}
   };
 
   useEffect(() => {
     if (userRole === 'admin') {
       setLoading(true);
-      Promise.all([fetchUsers(), fetchJobs(), fetchEvents()]).finally(() => setLoading(false));
+      Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks()]).finally(() => setLoading(false));
     }
   }, [userRole]);
 
+  // Handlers
   const handleDeleteUser = async (userId, userName) => {
     if (window.confirm(`Warning: Delete ${userName}? This cannot be undone.`)) {
       try {
@@ -66,11 +76,9 @@ function AdminDashboard() {
     }
   };
 
-  // NEW: Delete Event Handler
   const handleDeleteEvent = async (eventId, eventTitle) => {
     if(window.confirm(`Delete event: ${eventTitle}?`)) {
       try {
-        // Adjust this URL if your delete route is different in your backend router
         await axios.delete(`https://synnex-backend.onrender.com/api/admin/event/${eventId}`, { withCredentials: true });
         setEvents(events.filter(e => e._id !== eventId));
       } catch(error) { alert("Failed to delete event."); }
@@ -90,26 +98,49 @@ function AdminDashboard() {
     } catch (error) { alert("Failed to create event."); }
   };
 
-  const stats = [
-    { name: 'Total Students', value: users.filter(u => u.role === 'student').length || 0, icon: UsersIcon, color: 'bg-blue-500' },
-    { name: 'Active Alumni', value: users.filter(u => u.role === 'alumni').length || 0, icon: ChartBarIcon, color: 'bg-green-500' },
-    { name: 'Jobs Posted', value: jobs.length || 0, icon: BriefcaseIcon, color: 'bg-purple-500' },
-    { name: 'Upcoming Events', value: events.length || 0, icon: CalendarIcon, color: 'bg-orange-500' },
-  ];
+  const handleCreateNews = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post('https://synnex-backend.onrender.com/api/admin/news', newNotice, { withCredentials: true });
+      setNews([res.data, ...news]);
+      setShowNewsModal(false);
+      setNewNotice({ title: '', content: '', type: 'Notice' });
+      alert("Notice Published!");
+    } catch (err) { alert("Failed to publish notice."); }
+  };
+
+  const handleDeleteNews = async (id) => {
+    if (window.confirm("Delete this notice?")) {
+      try {
+        await axios.delete(`https://synnex-backend.onrender.com/api/admin/news/${id}`, { withCredentials: true });
+        setNews(news.filter(n => n._id !== id));
+      } catch (err) { alert("Error deleting notice."); }
+    }
+  };
 
   const renderContent = () => {
-    if (loading) return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div></div>;
+    if (loading) return <div className="p-10 text-center font-bold">Loading Admin Data...</div>;
 
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((item) => (
-              <div key={item.name} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center">
-                <div className={`${item.color} p-3 rounded-lg mr-4`}><item.icon className="h-6 w-6 text-white" /></div>
-                <div><p className="text-sm text-gray-500 font-medium">{item.name}</p><p className="text-2xl font-bold text-gray-900">{item.value}</p></div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
+              <p className="text-gray-500 text-sm">Total Users</p>
+              <h3 className="text-3xl font-bold">{users.length}</h3>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100">
+              <p className="text-gray-500 text-sm">Jobs Listed</p>
+              <h3 className="text-3xl font-bold">{jobs.length}</h3>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100">
+              <p className="text-gray-500 text-sm">Active Events</p>
+              <h3 className="text-3xl font-bold">{events.length}</h3>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
+              <p className="text-gray-500 text-sm">Feedback Received</p>
+              <h3 className="text-3xl font-bold">{feedbacks.length}</h3>
+            </div>
           </div>
         );
 
@@ -139,9 +170,66 @@ function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {users.length === 0 && <tr><td colSpan="4" className="p-4 text-center text-gray-500 py-10">No users found in database.</td></tr>}
                 </tbody>
               </table>
+            </div>
+          </div>
+        );
+
+      case 'news':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+            <div className="flex justify-between mb-6">
+              <h2 className="text-2xl font-bold">News & Notices</h2>
+              <button onClick={() => setShowNewsModal(true)} className="bg-black text-white px-4 py-2 rounded-lg">+ Add Notice</button>
+            </div>
+            <div className="space-y-4">
+              {news.map(n => (
+                <div key={n._id} className="border p-4 rounded-lg flex justify-between">
+                  <div>
+                    <span className="text-xs font-bold uppercase bg-blue-100 px-2 py-1 rounded text-blue-700">{n.type}</span>
+                    <h3 className="font-bold mt-2">{n.title}</h3>
+                    <p className="text-gray-600 text-sm">{n.content}</p>
+                  </div>
+                  <button onClick={() => handleDeleteNews(n._id)} className="text-red-500 font-bold">Delete</button>
+                </div>
+              ))}
+            </div>
+            {showNewsModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
+                    <div className="bg-white p-8 rounded-xl w-full max-w-md shadow-2xl">
+                        <h2 className="text-xl font-bold mb-4">Post New Notice</h2>
+                        <form onSubmit={handleCreateNews} className="space-y-4">
+                            <input type="text" placeholder="Title" required className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-black" value={newNotice.title} onChange={e => setNewNotice({...newNotice, title: e.target.value})} />
+                            <select className="w-full border p-3 rounded-lg outline-none" value={newNotice.type} onChange={e => setNewNotice({...newNotice, type: e.target.value})}>
+                                <option value="Notice">Notice</option>
+                                <option value="News">News</option>
+                                <option value="Update">Update</option>
+                            </select>
+                            <textarea placeholder="Content..." required className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-black" rows="4" value={newNotice.content} onChange={e => setNewNotice({...newNotice, content: e.target.value})}></textarea>
+                            <div className="flex justify-end space-x-2 pt-4">
+                                <button type="button" onClick={() => setShowNewsModal(false)} className="px-4 py-2 font-bold text-gray-500">Cancel</button>
+                                <button type="submit" className="bg-black text-white px-6 py-2 rounded-lg font-bold">Publish Now</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+          </div>
+        );
+
+      case 'feedback':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+            <h2 className="text-2xl font-bold mb-6">User Feedback Dashboard</h2>
+            <div className="space-y-4">
+              {feedbacks.length === 0 ? <p className="text-gray-400 text-center py-10">No feedback received yet.</p> : feedbacks.map(f => (
+                <div key={f._id} className="border-b pb-4 last:border-0">
+                  <p className="font-bold text-gray-800">{f.userId?.firstName || 'User'} {f.userId?.lastName || ''}:</p>
+                  <p className="text-gray-600 italic">"{f.message}"</p>
+                  <p className="text-xs text-gray-400 mt-1">{new Date(f.createdAt).toLocaleString()}</p>
+                </div>
+              ))}
             </div>
           </div>
         );
@@ -175,7 +263,6 @@ function AdminDashboard() {
                 <h2 className="text-2xl font-bold text-gray-800">Event Manager</h2>
                 <button onClick={() => setShowEventModal(true)} className="bg-black hover:bg-gray-800 transition text-white px-4 py-2 rounded-lg font-bold shadow-lg">+ Create New Event</button>
             </div>
-            
              {events.length === 0 ? (
                 <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">No events found. Click 'Create New Event' to add one.</p>
             ) : (
@@ -186,7 +273,6 @@ function AdminDashboard() {
                                <h3 className="font-bold text-lg text-black">{event.title}</h3>
                                <p className="text-sm text-gray-600 font-medium">{new Date(event.date).toDateString()} • {event.location}</p>
                              </div>
-                             {/* ADDED: Delete Button next to Upcoming badge */}
                              <div className="flex items-center space-x-3">
                                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
                                 <button onClick={() => handleDeleteEvent(event._id, event.title)} className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded font-bold text-sm transition">Delete</button>
@@ -195,7 +281,6 @@ function AdminDashboard() {
                      ))}
                  </div>
             )}
-
             {/* EVENT CREATION MODAL */}
             {showEventModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
@@ -229,98 +314,52 @@ function AdminDashboard() {
           </div>
         );
 
-      // NEW: Added switch cases for the new sidebar items
-      case 'news':
-        return (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
-            <h2 className="text-2xl font-bold text-gray-400">News & Notices Panel (Coming Soon)</h2>
-          </div>
-        );
-      case 'feedback':
-        return (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
-            <h2 className="text-2xl font-bold text-gray-400">Feedback Dashboard (Coming Soon)</h2>
-          </div>
-        );
       case 'bulk-import':
         return (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px] flex items-center justify-center">
-            <h2 className="text-2xl font-bold text-gray-400">Bulk Import Tool (Coming Soon)</h2>
+          <div className="bg-white p-10 rounded-xl text-center border-2 border-dashed border-gray-200">
+            <ArrowUpTrayIcon className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+            <h2 className="text-xl font-bold text-gray-800">Bulk Data Import</h2>
+            <p className="text-gray-500 mb-6">Upload Excel/CSV files to add students or alumni in bulk.</p>
+            <button className="bg-black text-white px-6 py-2 rounded-lg font-bold">Select File</button>
           </div>
         );
 
-      default:
-        return <div>Select a tab</div>;
+      default: return <div className="p-10 text-center">Section under maintenance.</div>;
     }
   };
 
-  if (!loggedIn || userRole !== 'admin') {
-      return null; 
-  }
-
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
-      
       {/* SIDEBAR */}
-      <div className="w-64 bg-black text-white flex flex-col shadow-xl z-10">
+      <div className="w-64 bg-black text-white flex flex-col shadow-2xl z-10">
         <div className="p-6 text-2xl font-bold border-b border-gray-800 tracking-wider">
           SYNNEX <span className="text-sm font-light block text-gray-400">Admin Panel</span>
         </div>
-        
         <nav className="flex-1 mt-6 px-4 space-y-2 overflow-y-auto">
-          <button onClick={() => setActiveTab('dashboard')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'dashboard' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <ChartBarIcon className="h-5 w-5 mr-3" /> Dashboard
-          </button>
-          <button onClick={() => setActiveTab('users')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'users' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <UsersIcon className="h-5 w-5 mr-3" /> Manage Users
-          </button>
-          <button onClick={() => setActiveTab('jobs')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'jobs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <BriefcaseIcon className="h-5 w-5 mr-3" /> Job Approvals
-          </button>
-          <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <CalendarIcon className="h-5 w-5 mr-3" /> Event Manager
-          </button>
-          
-          {/* NEW: Added Sidebar Options */}
-          <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <DocumentTextIcon className="h-5 w-5 mr-3" /> News & Notices
-          </button>
-          <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3" /> User Feedback
-          </button>
-          <button onClick={() => setActiveTab('bulk-import')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'bulk-import' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
-            <ArrowUpTrayIcon className="h-5 w-5 mr-3" /> Bulk Import
-          </button>
-
+          <button onClick={() => setActiveTab('dashboard')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'dashboard' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ChartBarIcon className="h-5 w-5 mr-3"/>Dashboard</button>
+          <button onClick={() => setActiveTab('users')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'users' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><UsersIcon className="h-5 w-5 mr-3"/>Manage Users</button>
+          <button onClick={() => setActiveTab('jobs')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'jobs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><BriefcaseIcon className="h-5 w-5 mr-3"/>Job Approvals</button>
+          <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><CalendarIcon className="h-5 w-5 mr-3"/>Event Manager</button>
+          <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><DocumentTextIcon className="h-5 w-5 mr-3"/>News & Notices</button>
+          <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3"/>User Feedback</button>
+          <button onClick={() => setActiveTab('bulk-import')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'bulk-import' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ArrowUpTrayIcon className="h-5 w-5 mr-3"/>Bulk Import</button>
         </nav>
-
         <div className="p-4 border-t border-gray-800">
-          <button onClick={() => navigate('/login')} className="flex items-center w-full p-3 text-red-400 hover:bg-gray-800 rounded-lg transition font-medium">
-            <ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" /> Logout
-          </button>
+          <button onClick={() => navigate('/login')} className="flex items-center w-full p-3 text-red-400 hover:bg-gray-800 rounded-lg transition font-medium"><ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" /> Logout</button>
         </div>
       </div>
 
-      {/* MAIN CONTENT AREA */}
+      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="bg-white shadow-sm p-4 flex justify-between items-center px-8 z-0">
-          <h1 className="text-xl font-bold text-gray-800">
-            {activeTab === 'dashboard' && 'Welcome back, Admin'}
-            {activeTab === 'users' && 'User Management'}
-            {activeTab === 'jobs' && 'Job Board Control'}
-            {activeTab === 'events' && 'Event Dashboard'}
-            {activeTab === 'news' && 'News & Notices Control'}
-            {activeTab === 'feedback' && 'System Feedback'}
-            {activeTab === 'bulk-import' && 'Bulk Data Import'}
-          </h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500 font-medium">Admin Mode</span>
-            <div className="h-10 w-10 bg-black rounded-full flex items-center justify-center text-white font-bold shadow-md">A</div>
-          </div>
+            <h1 className="text-xl font-bold text-gray-800 uppercase tracking-wide">{activeTab.replace('-', ' ')}</h1>
+            <div className="flex items-center space-x-3">
+                <span className="font-bold text-gray-600">Admin Mode</span>
+                <div className="w-10 h-10 bg-black rounded-full text-white flex justify-center items-center shadow-lg font-bold">A</div>
+            </div>
         </header>
-
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-8">
-          {renderContent()}
+            {renderContent()}
         </main>
       </div>
     </div>
