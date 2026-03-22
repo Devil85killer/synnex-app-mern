@@ -52,7 +52,9 @@ function Login() {
     };
 
     try {
-      const response = await axios.post(url, userData);
+      const response = await axios.post(url, userData, {
+    withCredentials: true
+});
       
       const payload = {
         ...(response.data.user || response.data[selectedRole.value] || response.data),

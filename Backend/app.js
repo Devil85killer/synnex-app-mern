@@ -6,7 +6,7 @@ const cookiesParser = require("cookie-parser");
 const app = express();
 const router = require("./src/routes");
 
-// 🔥 1. YAHAN TERA MEETING CONTROLLER IMPORT KIYA HAI
+// 1. IMPORT MEETING CONTROLLER
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
 const { User } = require("./src/models/user"); 
 
@@ -15,18 +15,20 @@ let Job, Event, News;
 try { 
     const EventModel = require("./src/models/eventModel");
     Event = EventModel.Event || EventModel; 
-} catch (e) { console.log("Event model check kar bhai!"); }
+} catch (e) { console.log("Event model not found or path is incorrect."); }
 
 try { 
     Job = require("./src/models/job"); 
-} catch (e) { console.log("Job model check kar bhai!"); }
+} catch (e) { console.log("Job model not found or path is incorrect."); }
 
 try { 
     const NewsModel = require("./src/models/newsModel");
     News = NewsModel.News || NewsModel; 
-} catch (e) { console.log("News model check kar bhai!"); }
+} catch (e) { console.log("News model not found or path is incorrect."); }
 
-// 🚀🚀 THE ULTIMATE CORS FIX (BRAMHASTRA) 🚀🚀
+// ============================================================
+// 🚀 THE ULTIMATE CORS CONFIGURATION 🚀
+// ============================================================
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (origin) {
@@ -47,12 +49,12 @@ app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static(`${__dirname}/public`));
 app.use(cookiesParser());
 
-// 🔥 TERE MEETING KE ROUTES
+// MEETING ROUTES
 app.post('/api/meeting', saveMeetingLink);
 app.get('/api/meeting', getMeetingLink);
 
 // ============================================================
-// 🕵️‍♂️ ADMIN PANEL KE APIS
+// ADMIN PANEL APIs
 // ============================================================
 
 app.get('/api/admin/all-users', async (req, res) => {
@@ -117,12 +119,16 @@ app.get('/api/admin/all-news', async (req, res) => {
 });
 
 // ============================================================
-// 🚀 THE MAGIC FIX FOR 404 ERRORS 🚀
+// 🚀 ROUTING CONFIGURATION 🚀
 // ============================================================
-// Ye sabse zaroori line hai. Frontend "/api" bhejta hai, toh backend ko bhi "/api" pe sunna hoga!
+
+// 1. Map all /api requests to the router (Handles: Jobs, Events, News)
 app.use("/api", router);
-app.use("/", router); // This brings your login, register, and alumni routes back to life!
-// Base route zinda rakhne ke liye taaki website crash na ho
+
+// 2. Map all root requests to the router (Handles: Auth, Login, Alumni list)
+app.use("/", router); 
+
+// 3. Fallback base route to prevent crashes
 app.get("/", (req, res) => {
     res.send("Synnex Backend is up and running smoothly! 🚀");
 });

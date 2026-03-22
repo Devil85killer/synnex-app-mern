@@ -74,7 +74,9 @@ function AdminDashboard() {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent);
+      const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent, {
+    withCredentials: true
+});
       setEvents([...events, res.data]); 
       setShowEventModal(false); 
       setNewEvent({ title: '', date: '', location: '', description: '' }); 
