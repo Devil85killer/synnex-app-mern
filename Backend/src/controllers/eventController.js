@@ -1,25 +1,29 @@
 // controllers/eventController.js
 const { Event } = require("../models/eventModel");
 
-// Controller to create an event (Restricted to Teacher, Alumni, Admin)
+// Controller to create an event (Restricted to Teacher, Faculty, Alumni, Admin)
 const createEventController = async (req, res) => {
   try {
-    // SECURITY CHECK: Allow only specific roles
-    const allowedRoles = ["teacher", "alumni", "admin"];
+    // SECURITY CHECK: 'faculty' ko add kar diya hai
+    const allowedRoles = ["teacher", "faculty", "alumni", "admin"];
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         status: "fail",
-        message: "Access Denied: Only Teachers, Alumni, and Admins can post events.",
+        message: "Access Denied: Only Teachers, Faculty, Alumni, and Admins can post events.",
       });
     }
 
-    const { title, date, location, description } = req.body;
+    // FRONTEND SE AANE WALE SAARE FIELDS NIKAL LIYE
+    const { title, date, time, location, type, description } = req.body;
     const createdBy = req.user._id; 
 
+    // DATABASE MEIN SAVE
     const event = await Event.create({
       title,
       date,
+      time,        // Added time
       location,
+      type,        // Added type (Online/Offline)
       description,
       createdBy,
     });
@@ -42,7 +46,7 @@ const createEventController = async (req, res) => {
 // Controller to get all events
 const getAllEventsController = async (req, res) => {
   try {
-    // I added "role" to the populate so your frontend knows who posted it
+    // Populate added so frontend knows who posted it
     const events = await Event.find().populate(
       "createdBy",
       "firstName lastName role" 
@@ -63,7 +67,7 @@ const getAllEventsController = async (req, res) => {
   }
 };
 
-// NEW: Controller to delete an event (Admin super-power)
+// Controller to delete an event (Admin super-power)
 const deleteEventController = async (req, res) => {
   try {
     const eventId = req.params.id;

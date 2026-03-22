@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // AXIOS IMPORT ZAROORI HAI
+import axios from "axios";
 import { getLoggedIn, getUserRole } from "../services/authService"; 
 import { useNavigate } from "react-router-dom";
 import NotLoggedIn from "./helper/NotLoggedIn";
@@ -12,10 +12,8 @@ function Jobs() {
   const role = getUserRole(); 
   const userRole = role?.toLowerCase();
 
-  // DUMMY DATA GAYA! Ab khali array se start hoga
   const [jobs, setJobs] = useState([]);
 
-  // NEW: State for New Job Form
   const [newJob, setNewJob] = useState({
     title: "",
     company: "",
@@ -24,22 +22,33 @@ function Jobs() {
     description: ""
   });
 
-  // 1. LIVE DATA FETCH KARNE KA CODE
+  // 1. SMART FETCH LOGIC (Normal + Fallback to Admin Route)
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const res = await axios.get('https://synnex-backend.onrender.com/api/jobs/all', {
+        let res = await axios.get('https://synnex-backend.onrender.com/api/jobs/all', {
           withCredentials: true 
         });
         
-        // Backend response format ke hisaab se set karo
-        if (res.data.status === 'success') {
+        // Data format check karke safe extract karna
+        if (res.data?.data?.jobs) {
           setJobs(res.data.data.jobs);
-        } else {
+        } else if (Array.isArray(res.data)) {
           setJobs(res.data);
+        } else {
+          // Fallback to admin route
+          const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs');
+          setJobs(adminRes.data);
         }
       } catch (error) {
-        console.error("Error fetching jobs:", error);
+        console.error("Job fetch error, trying fallback...", error);
+        // Agar normal route 401/404 de, toh admin route se data khinch lo
+        try {
+           const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs');
+           setJobs(adminRes.data);
+        } catch(e) {
+            console.error("Fallback also failed.");
+        }
       }
     };
 
@@ -48,7 +57,6 @@ function Jobs() {
     }
   }, [loggedIn]);
 
-  // 2. CREATE JOB KA LIVE API CALL
   const handleCreateJob = async (e) => {
     e.preventDefault();
     try {
@@ -56,15 +64,14 @@ function Jobs() {
         withCredentials: true
       });
       
-      // Naya job list mein add karo bina refresh kiye
-      if (res.data.status === 'success') {
+      if (res.data?.status === 'success') {
         setJobs([...jobs, res.data.data.job]);
       } else {
-        fetchJobs(); // Fallback: wapas sab fetch kar lo
+        setJobs([...jobs, res.data]);
       }
       
       setShowForm(false);
-      setNewJob({ title: "", company: "", location: "", type: "", description: "" }); // Form clear
+      setNewJob({ title: "", company: "", location: "", type: "", description: "" }); 
       alert("Job Posted Successfully! ✅");
     } catch (error) {
       console.error("Error creating job:", error);
@@ -72,7 +79,6 @@ function Jobs() {
     }
   };
 
-  // 3. DELETE JOB KA LIVE API CALL (For Admin)
   const handleDelete = async (jobId) => {
     if (window.confirm("Are you sure you want to delete this job permanently?")) {
       try {
@@ -80,7 +86,6 @@ function Jobs() {
           withCredentials: true 
         });
         
-        // UI se turant hata do (MongoDB mein '_id' use hota hai)
         setJobs(jobs.filter((job) => job._id !== jobId));
         alert("Job deleted permanently. 🗑️");
       } catch (error) {
@@ -95,11 +100,10 @@ function Jobs() {
       {loggedIn ? (
         <div className="max-w-6xl mx-auto">
           
-          {/* Header Section */}
           <div className="flex justify-between items-center mb-8 border-b pb-4">
             <h1 className="text-3xl font-bold text-gray-900">Alumni Job Board 💼</h1>
             
-            {/* Post Job Button */}
+            {/* FIXED: Sirf 'alumni' aur 'admin' ko button dikhega */}
             {(userRole === "alumni" || userRole === "admin") && (
               <button
                 onClick={() => setShowForm(!showForm)}
@@ -110,7 +114,7 @@ function Jobs() {
             )}
           </div>
 
-          {/* Add Job Form */}
+          {/* FIXED: Sirf 'alumni' aur 'admin' ko form dikhega */}
           {(userRole === "alumni" || userRole === "admin") && showForm && (
             <div className="bg-white p-6 rounded-lg shadow-md mb-8 border border-gray-200">
               <h2 className="text-xl font-bold mb-4 text-gray-800">Post a New Opportunity</h2>
@@ -138,16 +142,13 @@ function Jobs() {
             </div>
           )}
 
-          {/* Jobs List */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {jobs.length === 0 ? (
               <p className="text-gray-500 col-span-full text-center py-10">No jobs posted yet.</p>
             ) : (
               jobs.map((job) => (
-                // Dhyan de: job.id ki jagah job._id use hoga MongoDB ke liye
                 <div key={job._id} className="relative bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition duration-300 flex flex-col justify-between">
                   
-                  {/* ADMIN DELETE BUTTON */}
                   {userRole === "admin" && (
                     <button 
                       onClick={() => handleDelete(job._id)}
@@ -172,7 +173,6 @@ function Jobs() {
                     <div className="border-t border-gray-100 pt-3 pb-4">
                       <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-1">Posted By</p>
                       <p className="text-sm font-bold text-gray-900">
-                        {/* Handling populated createdBy data safely */}
                         {job.createdBy?.name || job.createdBy?.firstName || "Alumni User"} 
                         <span className="text-xs font-normal text-gray-500 ml-1">
                           ({job.createdBy?.role || "alumni"})

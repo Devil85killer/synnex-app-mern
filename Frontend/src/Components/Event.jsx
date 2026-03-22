@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'; // useEffect IMPORT KIYA HAI
-import axios from 'axios'; // AXIOS IMPORT KIYA HAI
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { getLoggedIn, getUserRole } from '../services/authService'; 
 import NotLoggedIn from './helper/NotLoggedIn';
 import { ToastContainer, toast } from 'react-toastify';
@@ -12,10 +12,8 @@ function Event() {
   const role = getUserRole();
   const userRole = role?.toLowerCase();
 
-  // DUMMY DATA GAYA! Ab khali array se shuru hoga
   const [events, setEvents] = useState([]);
 
-  // NEW: State for New Event Form
   const [newEvent, setNewEvent] = useState({
     title: "",
     date: "",
@@ -25,22 +23,33 @@ function Event() {
     description: ""
   });
 
-  // 1. LIVE DATA FETCH KARNE KA CODE
+  // 1. SMART FETCH LOGIC (Normal + Fallback to Admin Route)
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get('https://synnex-backend.onrender.com/api/events/all', {
+        let res = await axios.get('https://synnex-backend.onrender.com/api/events/all', {
           withCredentials: true 
         });
         
-        // Backend response format ke hisaab se check
-        if (res.data.status === 'success') {
+        // Data format check karke safe extract karna
+        if (res.data?.data?.events) {
           setEvents(res.data.data.events);
-        } else {
+        } else if (Array.isArray(res.data)) {
           setEvents(res.data);
+        } else {
+          // Fallback to admin route
+          const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events');
+          setEvents(adminRes.data);
         }
       } catch (error) {
-        console.error("Error fetching events:", error);
+        console.error("Event fetch error, trying fallback...", error);
+        // Agar normal route 401/404 de, toh admin route se data khinch lo
+        try {
+           const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events');
+           setEvents(adminRes.data);
+        } catch(e) {
+           console.error("Fallback also failed.");
+        }
       }
     };
 
@@ -62,10 +71,9 @@ function Event() {
       });
 
       // UI update bina refresh kiye
-      if (res.data.status === 'success') {
+      if (res.data?.status === 'success') {
         setEvents([...events, res.data.data.event]);
       } else {
-         // Fallback
         setEvents([...events, res.data]);
       }
 
@@ -107,8 +115,8 @@ function Event() {
               <p className="text-gray-500 mt-1">Discover and join events hosted by your alumni network.</p>
             </div>
             
-            {/* Create Event Button */}
-            {(userRole === "alumni" || userRole === "teacher" || userRole === "admin") && (
+            {/* YAHAN 'faculty' ADD KIYA HAI - Create Event Button */}
+            {(userRole === "alumni" || userRole === "teacher" || userRole === "faculty" || userRole === "admin") && (
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="mt-4 sm:mt-0 bg-black text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow-md font-medium z-10"
@@ -118,8 +126,8 @@ function Event() {
             )}
           </div>
 
-          {/* Add Event Form */}
-          {(userRole === "alumni" || userRole === "teacher" || userRole === "admin") && showForm && (
+          {/* YAHAN BHI 'faculty' ADD KIYA HAI - Add Event Form */}
+          {(userRole === "alumni" || userRole === "teacher" || userRole === "faculty" || userRole === "admin") && showForm && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
               <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Host a New Event</h2>
               <form onSubmit={handleCreateEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">

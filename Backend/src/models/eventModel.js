@@ -9,7 +9,17 @@ const eventSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  // NEW: Time field added
+  time: {
+    type: String,
+    required: true,
+  },
   location: {
+    type: String,
+    required: true,
+  },
+  // NEW: Type field added (Online / Offline)
+  type: {
     type: String,
     required: true,
   },
@@ -19,12 +29,12 @@ const eventSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
+    ref: "User", // Ensure your User model is named exactly "User"
     required: true,
   },
-  // You can add more fields as needed for your events
-});
+}, { timestamps: true }); // timestamps: true se createdAt aur updatedAt automatically save honge!
 
 const Event = mongoose.model("Event", eventSchema);
 
-module.exports = Event;
+// FIXED EXPORT: Ab tera controller bina kisi error ke isko import kar payega
+module.exports = { Event };

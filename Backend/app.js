@@ -13,24 +13,32 @@ const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingCo
 // 🔥 2. ADMIN PANEL KE LIYE USER MODEL IMPORT
 const { User } = require("./src/models/user"); 
 
-// 🔥 3. EXACT FILE NAMES IMPORT (Tere VS Code ke hisaab se)
+// 🔥 3. EXACT FILE NAMES IMPORT 
 let Job, Event;
 
-// Job Model Import (Tera file name job.js hai)
+try { 
+    // Agar tune pichli baar module.exports = { Event } kiya tha, toh import aisa hoga:
+    const EventModel = require("./src/models/eventModel");
+    Event = EventModel.Event || EventModel; 
+} catch (e) { 
+    console.log("Event model nahi mila, path check kar bhai!"); 
+}
+
 try { 
     Job = require("./src/models/job"); 
 } catch (e) { 
     console.log("Job model nahi mila, path check kar bhai!"); 
 }
 
-// Event Model Import (Tera file name eventModel.js hai)
-try { 
-    Event = require("./src/models/eventModel"); 
-} catch (e) { 
-    console.log("Event model nahi mila, path check kar bhai!"); 
-}
 
-app.use(cors());
+// 🚀🚀 FIX: YAHAN CORS KO 'MAGIC BULLET' PERMISSION DI HAI 🚀🚀
+app.use(cors({
+    origin: true, // <-- BRAMHASTRA: Ye line '*' wala error hamesha ke liye khatam kar degi!
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true, // Sabse important line!
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(
   express.json({
     limit: "16kb",
@@ -134,6 +142,12 @@ app.post('/api/admin/event', async (req, res) => {
         console.error("Error creating event:", error);
         res.status(500).json({ message: "Failed to create event" });
     }
+});
+
+// 7. Saare News laane ke liye (For Admin fallback)
+app.get('/api/admin/all-news', async (req, res) => {
+    // Agar News model nahi hai toh khali array bhej do
+    res.status(200).json([]);
 });
 
 // ============================================================
