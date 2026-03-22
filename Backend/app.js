@@ -1,57 +1,50 @@
-require("dotenv").config(); // Sabse zaroori line, ekdum top par!
+require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
-const cors = require("cors");
 const cookiesParser = require("cookie-parser");
 const app = express();
 const router = require("./src/routes");
 
 // 🔥 1. YAHAN TERA MEETING CONTROLLER IMPORT KIYA HAI
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
-
-// 🔥 2. ADMIN PANEL KE LIYE USER MODEL IMPORT
 const { User } = require("./src/models/user"); 
 
-// 🔥 3. EXACT FILE NAMES IMPORT 
-let Job, Event;
+let Job, Event, News;
 
 try { 
-    // Agar tune pichli baar module.exports = { Event } kiya tha, toh import aisa hoga:
     const EventModel = require("./src/models/eventModel");
     Event = EventModel.Event || EventModel; 
-} catch (e) { 
-    console.log("Event model nahi mila, path check kar bhai!"); 
-}
+} catch (e) { console.log("Event model check kar bhai!"); }
 
 try { 
     Job = require("./src/models/job"); 
-} catch (e) { 
-    console.log("Job model nahi mila, path check kar bhai!"); 
-}
+} catch (e) { console.log("Job model check kar bhai!"); }
 
+try { 
+    const NewsModel = require("./src/models/newsModel");
+    News = NewsModel.News || NewsModel; 
+} catch (e) { console.log("News model check kar bhai!"); }
 
-// 🚀🚀 FIX: YAHAN CORS KO 'MAGIC BULLET' PERMISSION DI HAI 🚀🚀
-app.use(cors({
-    origin: true, // <-- BRAMHASTRA: Ye line '*' wala error hamesha ke liye khatam kar degi!
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true, // Sabse important line!
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
+// 🚀🚀 THE ULTIMATE CORS FIX (BRAMHASTRA) 🚀🚀
+// Ye manual middleware hamesha requesting URL ko allow karega, no wildcard '*'.
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+        res.setHeader("Access-Control-Allow-Origin", origin);
+    }
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, X-Requested-With, Accept");
 
-app.use(
-  express.json({
-    limit: "16kb",
-  })
-);
+    if (req.method === "OPTIONS") {
+        return res.sendStatus(200); // Preflight ko turant pass karo
+    }
+    next();
+});
 
-app.use(
-  express.urlencoded({
-    extended: true,
-    limit: "16kb",
-  })
-);
-
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(express.static(`${__dirname}/public`));
 app.use(cookiesParser());
 
@@ -60,94 +53,68 @@ app.post('/api/meeting', saveMeetingLink);
 app.get('/api/meeting', getMeetingLink);
 
 // ============================================================
-// 🕵️‍♂️ ADMIN PANEL KE SAARE NAYE APIS (DO NOT TOUCH)
+// 🕵️‍♂️ ADMIN PANEL KE APIS
 // ============================================================
 
-// 1. Saare users laakar frontend ko dene ke liye
 app.get('/api/admin/all-users', async (req, res) => {
   try {
     const users = await User.find({}).select("-password"); 
     res.status(200).json(users);
-  } catch (error) {
-    console.error("Error fetching users for admin:", error);
-    res.status(500).json({ message: "Error fetching users" });
-  }
+  } catch (error) { res.status(500).json({ message: "Error fetching users" }); }
 });
 
-// 2. User ko Delete karne ke liye
 app.delete('/api/admin/user/:id', async (req, res) => {
   try {
-    const userId = req.params.id;
-    await User.findByIdAndDelete(userId);
-    res.status(200).json({ message: "User deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting user:", error);
-    res.status(500).json({ message: "Failed to delete user" });
-  }
+    await User.findByIdAndDelete(req.params.id);
+    res.status(200).json({ message: "User deleted" });
+  } catch (error) { res.status(500).json({ message: "Failed to delete user" }); }
 });
 
-// 3. Saari Jobs laane ke liye
 app.get('/api/admin/all-jobs', async (req, res) => {
   try {
     if (!Job) return res.status(200).json([]); 
     const jobs = await Job.find().sort({ createdAt: -1 });
     res.status(200).json(jobs);
-  } catch (error) {
-    console.error("Error fetching jobs:", error);
-    res.status(500).json({ message: "Failed to fetch jobs" });
-  }
+  } catch (error) { res.status(500).json({ message: "Failed to fetch jobs" }); }
 });
 
-// 4. Job Approve/Delete karne ke liye
 app.put('/api/admin/job/:id/:action', async (req, res) => {
     try {
         if (!Job) return res.status(400).json({ message: "Job model not found" });
-        const { id, action } = req.params;
-        
-        if (action === 'delete') {
-            await Job.findByIdAndDelete(id);
+        if (req.params.action === 'delete') {
+            await Job.findByIdAndDelete(req.params.id);
             return res.status(200).json({ message: "Job deleted" });
         }
         res.status(400).json({ message: "Action not supported yet" });
-    } catch (error) {
-        res.status(500).json({ message: "Failed to process job action" });
-    }
+    } catch (error) { res.status(500).json({ message: "Failed to process job action" }); }
 });
 
-// 5. Saare Events laane ke liye
 app.get('/api/admin/all-events', async (req, res) => {
   try {
     if (!Event) return res.status(200).json([]);
     const events = await Event.find().sort({ date: 1 });
     res.status(200).json(events);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch events" });
-  }
+  } catch (error) { res.status(500).json({ message: "Failed to fetch events" }); }
 });
 
-// 6. Naya Event Create karne ke liye
 app.post('/api/admin/event', async (req, res) => {
     try {
         if (!Event) return res.status(400).json({ message: "Event model not found" });
-        
         const eventData = req.body;
-        
         eventData.createdBy = new mongoose.Types.ObjectId("000000000000000000000000"); 
         if(!eventData.description) eventData.description = "Admin Event";
-
         const newEvent = new Event(eventData);
         await newEvent.save();
         res.status(201).json(newEvent);
-    } catch (error) {
-        console.error("Error creating event:", error);
-        res.status(500).json({ message: "Failed to create event" });
-    }
+    } catch (error) { res.status(500).json({ message: "Failed to create event" }); }
 });
 
-// 7. Saare News laane ke liye (For Admin fallback)
 app.get('/api/admin/all-news', async (req, res) => {
-    // Agar News model nahi hai toh khali array bhej do
-    res.status(200).json([]);
+    try {
+        if (!News) return res.status(200).json([]);
+        const news = await News.find().sort({ createdAt: -1 });
+        res.status(200).json(news);
+    } catch (error) { res.status(500).json({ message: "Error" }); }
 });
 
 // ============================================================
@@ -158,15 +125,8 @@ const PORT = process.env.PORT || 4000;
 
 async function connectDB() {
   try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error("Bhai, .env file read nahi ho rahi hai ya MONGODB_URI missing hai!");
-    }
-
     const connectionInstance = await mongoose.connect(process.env.MONGODB_URI);
-    
-    console.log(
-      `\n MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`
-    );
+    console.log(`\n MongoDB connected !! DB HOST: ${connectionInstance.connection.host}`);
   } catch (error) {
     console.log("MONGODB connection FAILED ", error);
     process.exit(1);
@@ -175,8 +135,6 @@ async function connectDB() {
 
 connectDB();
 
-app.listen(PORT, function () {
-  console.log("Server is running on port : ", PORT);
-});
+app.listen(PORT, function () { console.log("Server is running on port : ", PORT); });
 
 module.exports = app;
