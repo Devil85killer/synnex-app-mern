@@ -27,7 +27,6 @@ try {
 } catch (e) { console.log("News model check kar bhai!"); }
 
 // 🚀🚀 THE ULTIMATE CORS FIX (BRAMHASTRA) 🚀🚀
-// Ye manual middleware hamesha requesting URL ko allow karega, no wildcard '*'.
 app.use((req, res, next) => {
     const origin = req.headers.origin;
     if (origin) {
@@ -38,7 +37,7 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, Origin, X-Requested-With, Accept");
 
     if (req.method === "OPTIONS") {
-        return res.sendStatus(200); // Preflight ko turant pass karo
+        return res.sendStatus(200); 
     }
     next();
 });
@@ -118,8 +117,15 @@ app.get('/api/admin/all-news', async (req, res) => {
 });
 
 // ============================================================
+// 🚀 THE MAGIC FIX FOR 404 ERRORS 🚀
+// ============================================================
+// Ye sabse zaroori line hai. Frontend "/api" bhejta hai, toh backend ko bhi "/api" pe sunna hoga!
+app.use("/api", router);
 
-app.use("/", router);
+// Base route zinda rakhne ke liye taaki website crash na ho
+app.get("/", (req, res) => {
+    res.send("Synnex Backend is up and running smoothly! 🚀");
+});
 
 const PORT = process.env.PORT || 4000;
 
