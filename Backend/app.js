@@ -18,7 +18,9 @@ try {
 } catch (e) { console.log("Event model not found or path is incorrect."); }
 
 try { 
-    Job = require("./src/models/job"); 
+    // 🔥 FIX 1: JOB MODEL IMPORT THEEK KIYA HAI (Taki Admin mein Jobs dikhein)
+    const JobModel = require("./src/models/job");
+    Job = JobModel.Job || JobModel; 
 } catch (e) { console.log("Job model not found or path is incorrect."); }
 
 try { 
@@ -103,11 +105,19 @@ app.post('/api/admin/event', async (req, res) => {
         if (!Event) return res.status(400).json({ message: "Event model not found" });
         const eventData = req.body;
         eventData.createdBy = new mongoose.Types.ObjectId("000000000000000000000000"); 
+        
+        // 🔥 FIX 2: Admin Panel se Time aur Type nahi aata, isliye default values daal di taaki Mongoose crash na kare!
+        if(!eventData.time) eventData.time = "10:00 AM"; 
+        if(!eventData.type) eventData.type = "Offline / In-person";
         if(!eventData.description) eventData.description = "Admin Event";
+
         const newEvent = new Event(eventData);
         await newEvent.save();
         res.status(201).json(newEvent);
-    } catch (error) { res.status(500).json({ message: "Failed to create event" }); }
+    } catch (error) { 
+        console.error("Admin Event Error:", error);
+        res.status(500).json({ message: "Failed to create event" }); 
+    }
 });
 
 app.get('/api/admin/all-news', async (req, res) => {
@@ -122,13 +132,9 @@ app.get('/api/admin/all-news', async (req, res) => {
 // 🚀 ROUTING CONFIGURATION 🚀
 // ============================================================
 
-// 1. Map all /api requests to the router (Handles: Jobs, Events, News)
 app.use("/api", router);
-
-// 2. Map all root requests to the router (Handles: Auth, Login, Alumni list)
 app.use("/", router); 
 
-// 3. Fallback base route to prevent crashes
 app.get("/", (req, res) => {
     res.send("Synnex Backend is up and running smoothly! 🚀");
 });
