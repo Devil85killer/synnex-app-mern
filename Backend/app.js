@@ -121,7 +121,7 @@ app.get('/api/admin/all-news', async (req, res) => {
 // ============================================================
 // Ye sabse zaroori line hai. Frontend "/api" bhejta hai, toh backend ko bhi "/api" pe sunna hoga!
 app.use("/api", router);
-
+app.use("/", router); // This brings your login, register, and alumni routes back to life!
 // Base route zinda rakhne ke liye taaki website crash na ho
 app.get("/", (req, res) => {
     res.send("Synnex Backend is up and running smoothly! 🚀");
