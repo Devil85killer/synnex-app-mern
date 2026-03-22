@@ -4,7 +4,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cookiesParser = require("cookie-parser");
 // 🔥 NAYA: Password hash karne ke liye bcrypt import kiya
-const bcrypt = require("bcrypt"); 
+const bcrypt = require("bcryptjs");
 const app = express();
 const router = require("./src/routes");
 
