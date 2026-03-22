@@ -4,7 +4,7 @@ import axios from "axios";
 import Select from "react-select";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate, Link } from "react-router-dom"; // 🔥 Link add kiya
+import { useNavigate, Link } from "react-router-dom"; 
 import Loader from "../Components/Loader";
 
 // 🔥 IMAGE YAHAN IMPORT KI HAI
@@ -26,6 +26,7 @@ function Register() {
     firstName: "",
     lastName: "",
     role: "",
+    secretAnswer: "", // 🔥 NAYA: Secret answer state mein add kiya
   });
 
   const navigate = useNavigate();
@@ -204,6 +205,16 @@ function Register() {
                   />
                 </div>
 
+                {/* 🔥 NAYA: Favorite City wala input field */}
+                <input
+                  name="secretAnswer"
+                  type="text"
+                  required
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black sm:text-sm bg-blue-50"
+                  placeholder="Security Q: What is your favorite city?"
+                />
+
                 <Select
                   options={roleOptions}
                   value={selectedRole}
@@ -225,7 +236,6 @@ function Register() {
                 </button>
               </div>
 
-              {/* 🔥 LOGIN LINK YAHAN ADD KIYA HAI */}
               <div className="mt-5 text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}

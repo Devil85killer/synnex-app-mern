@@ -67,6 +67,18 @@ function AdminDashboard() {
     }
   };
 
+  // 🔥 NAYA: ADMIN RESET PASSWORD HANDLER
+  const handleResetPassword = async (userId, userName) => {
+    if (window.confirm(`Are you sure you want to reset the password for ${userName}? It will be changed to 'synnex123'.`)) {
+      try {
+        await axios.put(`https://synnex-backend.onrender.com/api/admin/reset-password/${userId}`, {}, { withCredentials: true });
+        alert(`Success! Password for ${userName} is now 'synnex123'.`);
+      } catch (error) { 
+        alert("Failed to reset password."); 
+      }
+    }
+  };
+
   const handleDeleteJob = async (jobId, jobTitle) => {
     if(window.confirm(`Delete job: ${jobTitle}?`)) {
       try {
@@ -165,7 +177,9 @@ function AdminDashboard() {
                       <td className="p-4 font-medium text-gray-900">{user.firstName} {user.lastName}</td>
                       <td className="p-4">{user.email}</td>
                       <td className="p-4 capitalize font-medium">{user.role}</td>
-                      <td className="p-4 text-center">
+                      <td className="p-4 text-center space-x-2">
+                        {/* 🔥 NAYA: Reset Password Button */}
+                        <button onClick={() => handleResetPassword(user._id, user.firstName)} className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 px-3 py-1 rounded transition hover:bg-blue-100">Reset Pass</button>
                         <button onClick={() => handleDeleteUser(user._id, user.firstName)} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded transition hover:bg-red-100">Delete</button>
                       </td>
                     </tr>

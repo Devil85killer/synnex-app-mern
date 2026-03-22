@@ -5,7 +5,7 @@ const registerController = async (req, res) => {
     const {
       email, password, startYear, endYear,
       degree, branch, rollNumber, firstName,
-      lastName, role,
+      lastName, role, secretAnswer // 🔥 NAYA: secretAnswer yahan extract kiya
     } = req.body;
 
     const userRole = role.toLowerCase();
@@ -40,7 +40,9 @@ const registerController = async (req, res) => {
       endYear,
       degree,
       branch,
-      rollNumber
+      rollNumber,
+      // 🔥 NAYA: secretAnswer ko lowercase karke save kar rahe hain taaki case-sensitivity ka issue na aaye
+      secretAnswer: secretAnswer ? secretAnswer.toLowerCase() : "mumbai" 
     });
 
     // 4. Send Success Response

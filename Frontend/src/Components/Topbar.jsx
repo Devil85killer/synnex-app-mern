@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FaHome, FaCalendar, FaBriefcase, FaEnvelopeOpenText, FaUserTie, FaSearch, FaUpload, FaVideo, FaBars, FaTimes, FaNewspaper, FaCommentDots } from 'react-icons/fa';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+// 🔥 Removed unused icons (FaUpload, FaVideo, FaEnvelopeOpenText) to clean up code
+import { FaHome, FaCalendar, FaBriefcase, FaUserTie, FaSearch, FaBars, FaTimes, FaNewspaper, FaCommentDots } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getLoggedIn } from '../services/authService';
 import { logout } from '../features/authSlice';
@@ -60,7 +61,6 @@ function Topbar() {
           <FaBriefcase className="mr-1.5" /> Jobs
         </Link>
 
-        {/* NAYA: Dropdown hata kar sidha links daal diye */}
         <Link to="/newsletter" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaNewspaper className="mr-1.5" /> News & Notices
         </Link>
@@ -69,20 +69,10 @@ function Topbar() {
           <FaCommentDots className="mr-1.5" /> Feedback
         </Link>
 
-        <Link to="/meeting" className="text-sm flex items-center hover:text-blue-600 transition">
-          <FaVideo className="mr-1.5" /> Meeting
-        </Link>
-        
-        <Link to="/bulk-upload" className="text-sm flex items-center hover:text-blue-600 transition">
-          <FaUpload className="mr-1.5" /> Bulk Import
-        </Link>
+        {/* 🔥 Meeting, Bulk Import, aur Send Mail YAHAN SE HATA DIYE GAYE HAIN */}
         
         <Link to="/search-people" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaSearch className="mr-1.5" /> Search Alumni
-        </Link>
-
-        <Link to="/send-mail" className="text-sm flex items-center hover:text-blue-600 transition">
-          <FaEnvelopeOpenText className="mr-1.5" /> Send Mail
         </Link>
 
         {/* Auth Buttons */}

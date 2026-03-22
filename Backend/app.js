@@ -3,6 +3,8 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cookiesParser = require("cookie-parser");
+// 🔥 NAYA: Password hash karne ke liye bcrypt import kiya
+const bcrypt = require("bcrypt"); 
 const app = express();
 const router = require("./src/routes");
 
@@ -29,7 +31,6 @@ try {
 } catch (e) { console.log("News model check kar bhai!"); }
 
 try { 
-    // Agar feedbackModel nahi hai toh folder mein file bana dena (Schema neeche hai)
     Feedback = require("./src/models/feedbackModel"); 
 } catch (e) { console.log("Feedback model abhi missing hai!"); }
 
@@ -77,6 +78,25 @@ app.delete('/api/admin/user/:id', async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "User deleted" });
   } catch (error) { res.status(500).json({ message: "Failed to delete user" }); }
+});
+
+// 🔥 NAYA: ADMIN POWER - FORCE RESET PASSWORD API
+app.put('/api/admin/reset-password/:id', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        // Admin reset karega toh password default "synnex123" ho jayega
+        const defaultPassword = "synnex123";
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(defaultPassword, salt);
+        
+        await user.save();
+        res.status(200).json({ message: `Password reset successfully to: ${defaultPassword}` });
+    } catch (error) {
+        console.error("Admin Password Reset Error:", error);
+        res.status(500).json({ message: "Failed to reset password" });
+    }
 });
 
 // --- JOB BOARD CONTROL ---
@@ -158,6 +178,73 @@ app.get('/api/admin/all-feedback', async (req, res) => {
 // --- BULK IMPORT (DUMMY CONNECTION FOR UI) ---
 app.post('/api/admin/bulk-import', async (req, res) => {
     res.status(200).json({ message: "Import functionality ready to be implemented with Multer!" });
+});
+
+// ============================================================
+// 🔥 NAYA: LOGGED-IN USER PASSWORD CHANGE API
+// ============================================================
+app.put('/api/change-password', async (req, res) => {
+    try {
+        const { userId, currentPassword, newPassword } = req.body;
+
+        if (!userId || !currentPassword || !newPassword) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // 1. Purana password check karo (Security Test)
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Incorrect current password!" });
+        }
+
+        // 2. Naya password hash karke save karo
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.status(200).json({ message: "Password changed successfully!" });
+    } catch (error) {
+        console.error("Change Password Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+// ============================================================
+// 🔥 NAYA: USER PASSWORD RESET API (BINA OTP KE)
+// ============================================================
+app.post('/api/reset-password-direct', async (req, res) => {
+    try {
+        const { email, secretAnswer, newPassword } = req.body;
+
+        if (!email || !secretAnswer || !newPassword) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ message: "User not found with this email" });
+        }
+
+        // Checking Secret Answer (don't break if old users don't have it, handle undefined)
+        const storedAnswer = user.secretAnswer || "mumbai"; 
+        if (storedAnswer.toLowerCase() !== secretAnswer.toLowerCase()) {
+            return res.status(401).json({ message: "Incorrect Security Answer!" });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.status(200).json({ message: "Password updated successfully!" });
+    } catch (error) {
+        console.error("Password Reset Error:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
 });
 
 // ============================================================

@@ -20,7 +20,7 @@ const UserSchema = new mongoose.Schema({
     default: true, // 🔥 Instant approval on registration
   },
   
-  // Naye fields jo tere Frontend Register form se aayenge
+  // Fields coming from the Frontend Register form
   firstName: { type: String },
   lastName: { type: String },
   startYear: { type: String },
@@ -29,7 +29,14 @@ const UserSchema = new mongoose.Schema({
   branch: { type: String },
   rollNumber: { type: String },
 
-}, { timestamps: true }); // timestamps se created_at aur updated_at khud ban jayega
+  // 🔥 NEW FIELD: Security Question for Password Reset
+  secretAnswer: {
+    type: String,
+    required: true,
+    default: "mumbai" // Failsafe default for existing users in the DB
+  }
+
+}, { timestamps: true }); // timestamps automatically handle created_at and updated_at
 
 const User = mongoose.model("User", UserSchema);
 
