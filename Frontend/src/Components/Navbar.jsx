@@ -1,17 +1,19 @@
 import { Disclosure } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon, ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { getUserRole } from '../services/authService';
 
-// YAHAN HAIN TERE ASLI PROJECT KE LINKS
+// 🔥 SMART NAVIGATION: AdminOnly flag set kar diya
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Events', href: '/events' },
   { name: 'Jobs', href: '/jobs' },
-  { name: 'Meeting', href: '/meeting' },
+  { name: 'Meeting', href: '/meeting', adminOnly: true },      
   { name: 'Search Alumni', href: '/search-people' },
-  { name: 'Send Mail', href: '/send-mail' },
+  { name: 'Send Mail', href: '/send-mail', adminOnly: true },  
   { name: 'News & Notices', href: '/newsletter' },
   { name: 'Feedback', href: '/feedback' },
+  // 🔥 Bulk Import yahan se puri tarah gayab
 ];
 
 function classNames(...classes) {
@@ -19,11 +21,20 @@ function classNames(...classes) {
 }
 
 function Navbar() {
-  const location = useLocation(); // Current page pata karne ke liye
+  const location = useLocation(); 
   const navigate = useNavigate();
+  
+  const role = getUserRole()?.toLowerCase();
+
+  // 🔥 FILTER ROUTE: Normal users se Meeting aur Mail chupa dega
+  const allowedNavigation = navigation.filter(item => {
+    if (item.adminOnly && role !== 'admin') {
+      return false; 
+    }
+    return true; 
+  });
 
   const handleLogout = () => {
-    // Yahan apni logout logic daal dena (jaise localStorage clear karna)
     localStorage.clear(); 
     navigate('/login');
   };
@@ -35,7 +46,6 @@ function Navbar() {
           <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
             <div className="relative flex h-16 items-center justify-between">
               
-              {/* Mobile menu button */}
               <div className="absolute inset-y-0 left-0 flex items-center lg:hidden">
                 <Disclosure.Button className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
                   <span className="absolute -inset-0.5" />
@@ -48,19 +58,13 @@ function Navbar() {
                 </Disclosure.Button>
               </div>
 
-              {/* Logo & Desktop Links */}
               <div className="flex flex-1 items-center justify-center lg:items-stretch lg:justify-start">
-                
-                {/* Logo Section */}
                 <div className="flex flex-shrink-0 items-center mr-4">
                   <span className="text-white font-bold text-xl tracking-wider">🎓 AlumniConnect</span>
                 </div>
-
-                {/* Desktop Menu */}
                 <div className="hidden lg:ml-6 lg:block">
                   <div className="flex space-x-2">
-                    {navigation.map((item) => {
-                      // Logic check if this route is currently active
+                    {allowedNavigation.map((item) => {
                       const isCurrent = location.pathname === item.href;
                       return (
                         <Link
@@ -82,7 +86,6 @@ function Navbar() {
                 </div>
               </div>
 
-              {/* Right Side - Logout Button */}
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <button
                   onClick={handleLogout}
@@ -96,10 +99,9 @@ function Navbar() {
             </div>
           </div>
 
-          {/* Mobile Menu Panel */}
           <Disclosure.Panel className="lg:hidden">
             <div className="space-y-1 px-2 pb-3 pt-2 bg-gray-900 border-t border-gray-800">
-              {navigation.map((item) => {
+              {allowedNavigation.map((item) => {
                 const isCurrent = location.pathname === item.href;
                 return (
                   <Disclosure.Button

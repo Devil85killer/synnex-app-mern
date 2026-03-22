@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UsersIcon, BriefcaseIcon, CalendarIcon, ChartBarIcon, ArrowRightOnRectangleIcon,
-  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, ArrowUpTrayIcon 
+  DocumentTextIcon, ChatBubbleLeftEllipsisIcon 
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -178,7 +178,7 @@ function AdminDashboard() {
 
       case 'news':
         return (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <div className="flex justify-between mb-6">
               <h2 className="text-2xl font-bold">News & Notices</h2>
               <button onClick={() => setShowNewsModal(true)} className="bg-black text-white px-4 py-2 rounded-lg">+ Add Notice</button>
@@ -220,7 +220,7 @@ function AdminDashboard() {
 
       case 'feedback':
         return (
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+          <div className="bg-white p-6 rounded-xl shadow-sm">
             <h2 className="text-2xl font-bold mb-6">User Feedback Dashboard</h2>
             <div className="space-y-4">
               {feedbacks.length === 0 ? <p className="text-gray-400 text-center py-10">No feedback received yet.</p> : feedbacks.map(f => (
@@ -314,16 +314,6 @@ function AdminDashboard() {
           </div>
         );
 
-      case 'bulk-import':
-        return (
-          <div className="bg-white p-10 rounded-xl text-center border-2 border-dashed border-gray-200">
-            <ArrowUpTrayIcon className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <h2 className="text-xl font-bold text-gray-800">Bulk Data Import</h2>
-            <p className="text-gray-500 mb-6">Upload Excel/CSV files to add students or alumni in bulk.</p>
-            <button className="bg-black text-white px-6 py-2 rounded-lg font-bold">Select File</button>
-          </div>
-        );
-
       default: return <div className="p-10 text-center">Section under maintenance.</div>;
     }
   };
@@ -342,7 +332,6 @@ function AdminDashboard() {
           <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><CalendarIcon className="h-5 w-5 mr-3"/>Event Manager</button>
           <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><DocumentTextIcon className="h-5 w-5 mr-3"/>News & Notices</button>
           <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3"/>User Feedback</button>
-          <button onClick={() => setActiveTab('bulk-import')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'bulk-import' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ArrowUpTrayIcon className="h-5 w-5 mr-3"/>Bulk Import</button>
         </nav>
         <div className="p-4 border-t border-gray-800">
           <button onClick={() => navigate('/login')} className="flex items-center w-full p-3 text-red-400 hover:bg-gray-800 rounded-lg transition font-medium"><ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" /> Logout</button>
