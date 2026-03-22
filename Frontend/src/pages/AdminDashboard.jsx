@@ -5,8 +5,15 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+// YAHAN authService IMPORT KIYA HAI SECURITY KE LIYE
+import { getLoggedIn, getUserRole } from '../services/authService';
+
 function AdminDashboard() {
   const navigate = useNavigate();
+  const loggedIn = getLoggedIn();
+  const role = getUserRole();
+  const userRole = role?.toLowerCase();
+
   const [activeTab, setActiveTab] = useState('dashboard'); 
   
   const [users, setUsers] = useState([]);
@@ -17,6 +24,14 @@ function AdminDashboard() {
   // Event Modal States
   const [showEventModal, setShowEventModal] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', description: '' });
+
+  // SECURITY CHECK: Is the user an Admin?
+  useEffect(() => {
+    if (!loggedIn || userRole !== 'admin') {
+      alert("Access Denied: Admin privileges required.");
+      navigate('/dashboard'); // Kick normal users out
+    }
+  }, [loggedIn, userRole, navigate]);
 
   // API Calls
   const fetchUsers = async () => {
@@ -30,9 +45,12 @@ function AdminDashboard() {
   };
 
   useEffect(() => {
-    setLoading(true);
-    Promise.all([fetchUsers(), fetchJobs(), fetchEvents()]).finally(() => setLoading(false));
-  }, []);
+    // Only fetch data if the user is actually an admin
+    if (userRole === 'admin') {
+      setLoading(true);
+      Promise.all([fetchUsers(), fetchJobs(), fetchEvents()]).finally(() => setLoading(false));
+    }
+  }, [userRole]);
 
   // Action Handlers
   const handleDeleteUser = async (userId, userName) => {
@@ -184,6 +202,11 @@ function AdminDashboard() {
                       <label className="block text-sm font-bold text-gray-700 mb-1">Location / Venue</label>
                       <input type="text" required value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="e.g. Main Auditorium" />
                     </div>
+                    {/* ADDED DESCRIPTION FIELD */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
+                      <textarea required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="Event details..." rows="3"></textarea>
+                    </div>
                     <div className="flex justify-end space-x-3 mt-8">
                       <button type="button" onClick={() => setShowEventModal(false)} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg font-bold transition">Cancel</button>
                       <button type="submit" className="px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg font-bold shadow-lg transition">Publish Event</button>
@@ -198,6 +221,11 @@ function AdminDashboard() {
         return <div>Select a tab</div>;
     }
   };
+
+  // If not logged in or not admin, return null so nothing renders while redirecting
+  if (!loggedIn || userRole !== 'admin') {
+      return null; 
+  }
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
