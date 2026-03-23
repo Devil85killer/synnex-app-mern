@@ -150,6 +150,55 @@ app.delete('/api/admin/event/:id', async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Error" }); }
 });
 
+// ============================================================
+// 🔥 NAYA: EVENT REGISTRATION & ATTENDEES APIs
+// ============================================================
+
+// 1. USER REGISTRATION KE LIYE API
+app.post('/api/events/register/:id', async (req, res) => {
+    try {
+        const { userId } = req.body;
+        const event = await Event.findById(req.params.id);
+        
+        if (!event) return res.status(404).json({ message: "Event not found" });
+
+        // Agar attendees array nahi hai, toh empty array set karo
+        if (!event.attendees) event.attendees = [];
+
+        // Check karo ki pehle se toh register nahi hai
+        if (event.attendees.includes(userId)) {
+            return res.status(400).json({ message: "Already registered!" });
+        }
+
+        // Add user ID to attendees
+        event.attendees.push(userId);
+        await event.save();
+        
+        res.status(200).json({ message: "Registration successful!", event });
+    } catch (error) {
+        console.error("Register Error:", error);
+        res.status(500).json({ message: "Failed to register" });
+    }
+});
+
+// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API (With User Data)
+app.get('/api/admin/event-attendees/:id', async (req, res) => {
+    try {
+        // Event dhoondo aur attendees ke IDs ko User collection se unke detail (naam, email) se badal do
+        const event = await Event.findById(req.params.id).populate('attendees', 'firstName lastName email role');
+        
+        if (!event) return res.status(404).json({ message: "Event not found" });
+        
+        // Sirf attendees ka array return karo
+        res.status(200).json(event.attendees || []);
+    } catch (error) {
+        console.error("Fetch Attendees Error:", error);
+        res.status(500).json({ message: "Failed to fetch attendees" });
+    }
+});
+// ============================================================
+
+
 // --- NEWS & NOTICES CONNECTION ---
 app.get('/api/admin/all-news', async (req, res) => {
     try {
@@ -183,7 +232,7 @@ app.post('/api/admin/bulk-import', async (req, res) => {
 });
 
 // ============================================================
-// 🔥 NAYA: LOGGED-IN USER PASSWORD CHANGE API
+// 🔥 LOGGED-IN USER PASSWORD CHANGE API
 // ============================================================
 app.put('/api/change-password', async (req, res) => {
     try {
@@ -219,7 +268,7 @@ app.put('/api/change-password', async (req, res) => {
 });
 
 // ============================================================
-// 🔥 NAYA: USER PASSWORD RESET API (BINA OTP KE)
+// 🔥 USER PASSWORD RESET API (BINA OTP KE)
 // ============================================================
 app.post('/api/reset-password-direct', async (req, res) => {
     try {
