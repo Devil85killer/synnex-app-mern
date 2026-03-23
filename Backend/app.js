@@ -89,9 +89,11 @@ app.put('/api/admin/reset-password/:id', async (req, res) => {
         // Admin reset karega toh password default "synnex123" ho jayega
         const defaultPassword = "synnex123";
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(defaultPassword, salt);
+        const hashedPassword = await bcrypt.hash(defaultPassword, salt);
         
-        await user.save();
+        // 🔥 FIX: user.save() ki jagah updateOne use kiya
+        await User.updateOne({ _id: user._id }, { password: hashedPassword });
+        
         res.status(200).json({ message: `Password reset successfully to: ${defaultPassword}` });
     } catch (error) {
         console.error("Admin Password Reset Error:", error);
@@ -202,10 +204,12 @@ app.put('/api/change-password', async (req, res) => {
             return res.status(400).json({ message: "Incorrect current password!" });
         }
 
-        // 2. Naya password hash karke save karo
+        // 2. Naya password hash karke update karo
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
-        await user.save();
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        
+        // 🔥 FIX: user.save() ki jagah updateOne use kiya
+        await User.updateOne({ _id: user._id }, { password: hashedPassword });
 
         res.status(200).json({ message: "Password changed successfully!" });
     } catch (error) {
@@ -213,6 +217,7 @@ app.put('/api/change-password', async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 // ============================================================
 // 🔥 NAYA: USER PASSWORD RESET API (BINA OTP KE)
 // ============================================================
@@ -237,8 +242,10 @@ app.post('/api/reset-password-direct', async (req, res) => {
 
         // Hash new password
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(newPassword, salt);
-        await user.save();
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+        
+        // 🔥 FIX: user.save() ki jagah updateOne use kiya
+        await User.updateOne({ _id: user._id }, { password: hashedPassword });
 
         res.status(200).json({ message: "Password updated successfully!" });
     } catch (error) {
