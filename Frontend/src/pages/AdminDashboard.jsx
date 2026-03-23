@@ -29,6 +29,7 @@ function AdminDashboard() {
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [attendeesList, setAttendeesList] = useState([]);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
+  const [currentEventId, setCurrentEventId] = useState(null); // 🔥 Remembers which event is currently open
 
   const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', description: '' });
   const [newNotice, setNewNotice] = useState({ title: '', content: '', type: 'Notice' });
@@ -122,6 +123,7 @@ function AdminDashboard() {
   };
 
   const viewAttendees = async (eventId) => {
+    setCurrentEventId(eventId); // Store current event ID
     setShowAttendeesModal(true);
     setLoadingAttendees(true);
     try {
@@ -131,6 +133,29 @@ function AdminDashboard() {
       alert("Could not fetch attendees list.");
     } finally {
       setLoadingAttendees(false);
+    }
+  };
+
+  // 🔥 NEW: Function to remove a user from an event
+  const handleRemoveAttendee = async (userId, userName) => {
+    if (window.confirm(`Are you sure you want to remove ${userName} from this event?`)) {
+      try {
+        await axios.delete(`https://synnex-backend.onrender.com/api/admin/event/${currentEventId}/attendee/${userId}`, { withCredentials: true });
+        
+        // Remove from the modal list instantly
+        setAttendeesList(attendeesList.filter(user => user._id !== userId && user.email !== `ID: ${userId}`));
+        
+        // Update the main event list in the background
+        setEvents(events.map(ev => {
+            if (ev._id === currentEventId) {
+                return { ...ev, attendees: ev.attendees.filter(id => id !== userId && id !== userId.toString()) };
+            }
+            return ev;
+        }));
+        
+      } catch (error) {
+        alert("Failed to remove user.");
+      }
     }
   };
 
@@ -328,12 +353,10 @@ function AdminDashboard() {
         </main>
       </div>
 
-      {/* 🔥 FIX: YAHAN CLOSE BUTTON EKDUM PERFECTLY ALIGN KIYA HAI */}
       {showAttendeesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative">
             
-            {/* Header with Perfect Flex Justify-Between */}
             <div className="flex justify-between items-center p-5 border-b bg-gray-50 w-full">
               <h3 className="text-lg font-bold text-gray-900">👥 Registered Attendees</h3>
               <button 
@@ -357,9 +380,18 @@ function AdminDashboard() {
                                   <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
                                   <p className="text-sm text-gray-500">{user.email}</p>
                                 </div>
-                                <span className={`text-xs px-2 py-1 rounded font-bold capitalize ${user.role === 'student' ? 'bg-blue-100 text-blue-700' : user.role === 'alumni' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
-                                  {user.role || 'User'}
-                                </span>
+                                <div className="flex flex-col items-end gap-2">
+                                  <span className={`text-xs px-2 py-1 rounded font-bold capitalize ${user.role === 'student' ? 'bg-blue-100 text-blue-700' : user.role === 'alumni' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
+                                    {user.role || 'User'}
+                                  </span>
+                                  {/* 🔥 REMOVE BUTTON YAHAN PE HAI */}
+                                  <button 
+                                    onClick={() => handleRemoveAttendee(user._id || user.email.replace('ID: ', ''), user.firstName)}
+                                    className="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 px-3 py-1 rounded text-xs font-bold transition"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
                             </li>
                         ))}
                     </ul>

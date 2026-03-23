@@ -176,7 +176,7 @@ app.post('/api/events/register/:id', async (req, res) => {
     }
 });
 
-// 🔥 THE ULTIMATE BYPASS FIX (Dono Collections me dhundega: users & alumnis)
+// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API
 app.get('/api/admin/event-attendees/:id', async (req, res) => {
     try {
         const event = await Event.findById(req.params.id).lean();
@@ -189,27 +189,24 @@ app.get('/api/admin/event-attendees/:id', async (req, res) => {
             return res.status(200).json([]);
         }
 
-        // 1. IDs ko properly ObjectIds mein convert karna
+        // IDs ko properly ObjectIds mein convert karna
         const objectIds = attendeesArray
             .filter(id => mongoose.isValidObjectId(id))
             .map(id => new mongoose.Types.ObjectId(id.toString()));
 
         if (objectIds.length === 0) return res.status(200).json([]);
 
-        // 🔥 THE BYPASS: Direct MongoDB Database Search (Bina kisi Model ke)
+        // THE BYPASS: Direct MongoDB Database Search
         const db = mongoose.connection.db;
 
-        // 2. Pehle 'users' collection mein dhoondho
+        // Pehle 'users' collection mein dhoondho, phir 'alumnis' mein
         const usersFound = await db.collection('users').find({ _id: { $in: objectIds } }).toArray();
-        
-        // 3. Phir 'alumnis' collection mein dhoondho
         const alumnisFound = await db.collection('alumnis').find({ _id: { $in: objectIds } }).toArray();
 
-        // 4. Dono ka data mila do
         const allAttendees = [...usersFound, ...alumnisFound];
 
-        // Frontend pe error na aaye isliye format theek kardo
         const formattedAttendees = allAttendees.map(user => ({
+            _id: user._id, // 🔥 ID zaroori hai remove karne ke liye
             firstName: user.firstName || user.name || "Unknown",
             lastName: user.lastName || "",
             email: user.email || "No Email",
@@ -220,6 +217,38 @@ app.get('/api/admin/event-attendees/:id', async (req, res) => {
     } catch (error) {
         console.error("Fetch Attendees Error:", error);
         res.status(500).json({ message: "Failed to fetch attendees" });
+    }
+});
+
+// 🔥 NAYA: ADMIN KISI BHI USER KO EVENT SE NIKAL SAKTA HAI (BULLETPROOF)
+app.delete('/api/admin/event/:eventId/attendee/:userId', async (req, res) => {
+    try {
+        const { eventId, userId } = req.params;
+        
+        let objectId = null;
+        if (mongoose.isValidObjectId(userId)) {
+            objectId = new mongoose.Types.ObjectId(userId);
+        }
+
+        // Dono format (String and ObjectId) ko pakad kar nikal dega
+        const event = await Event.findByIdAndUpdate(
+            eventId,
+            { 
+                $pull: { 
+                    attendees: { 
+                        $in: objectId ? [userId, objectId, userId.toString()] : [userId, userId.toString()] 
+                    } 
+                } 
+            },
+            { new: true }
+        );
+
+        if (!event) return res.status(404).json({ message: "Event not found" });
+
+        res.status(200).json({ message: "User removed from event successfully!", event });
+    } catch (error) {
+        console.error("Remove Attendee Error:", error);
+        res.status(500).json({ message: "Failed to remove attendee" });
     }
 });
 // ============================================================
@@ -309,7 +338,7 @@ app.post('/api/reset-password-direct', async (req, res) => {
             return res.status(404).json({ message: "User not found with this email" });
         }
 
-        // Checking Secret Answer (don't break if old users don't have it, handle undefined)
+        // Checking Secret Answer
         const storedAnswer = user.secretAnswer || "mumbai"; 
         if (storedAnswer.toLowerCase() !== secretAnswer.toLowerCase()) {
             return res.status(401).json({ message: "Incorrect Security Answer!" });
