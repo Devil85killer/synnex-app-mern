@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getLoggedIn, getUserRole, getUserData } from '../services/authService'; 
+import { getLoggedIn, getUserRole } from '../services/authService'; 
 import NotLoggedIn from './helper/NotLoggedIn';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function Event() {
   const loggedIn = getLoggedIn();
-  const userData = getUserData();
+  const [showForm, setShowForm] = useState(false);
+  
   const role = getUserRole();
   const userRole = role?.toLowerCase();
 
-  const [showForm, setShowForm] = useState(false);
   const [events, setEvents] = useState([]);
+  
+  // 🔥 FIX 1: Ye naya state add kiya hai jo yaad rakhega aap kis me register hue ho
   const [registeredEvents, setRegisteredEvents] = useState([]); 
 
   const [newEvent, setNewEvent] = useState({
@@ -24,6 +26,7 @@ function Event() {
     description: ""
   });
 
+  // SMART FETCH LOGIC
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -31,42 +34,41 @@ function Event() {
           withCredentials: true 
         });
         
-        let fetchedEvents = res.data?.data?.events || res.data;
-        setEvents(fetchedEvents);
-
-        if (userData?._id && Array.isArray(fetchedEvents)) {
-            const userRegEvents = fetchedEvents
-                .filter(ev => ev.attendees && ev.attendees.includes(userData._id))
-                .map(ev => ev._id);
-            setRegisteredEvents(userRegEvents);
+        if (res.data?.data?.events) {
+          setEvents(res.data.data.events);
+        } else if (Array.isArray(res.data)) {
+          setEvents(res.data);
+        } else {
+          const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events');
+          setEvents(adminRes.data);
         }
-
       } catch (error) {
+        console.error("Event fetch error, trying fallback...", error);
         try {
            const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events');
            setEvents(adminRes.data);
-        } catch(e) { console.error("Fallback also failed."); }
+        } catch(e) {
+           console.error("Fallback also failed.");
+        }
       }
     };
 
-    if (loggedIn) fetchEvents();
+    if (loggedIn) {
+      fetchEvents();
+    }
   }, [loggedIn]);
 
+  // 🔥 FIX 2: Register function ko update kiya
   const handleRegister = async (eventId, eventName) => {
     try {
-      await axios.post(`https://synnex-backend.onrender.com/api/events/register/${eventId}`, {
-        userId: userData._id
-      });
+      // Agar future mein Backend API banani ho register ke liye, toh wo yahan aayegi
+      // await axios.post(`https://synnex-backend.onrender.com/api/events/register/${eventId}`);
       
+      // UI State update karna taaki button change ho jaye
       setRegisteredEvents([...registeredEvents, eventId]);
       toast.success(`Successfully registered for: ${eventName}! 🎉`);
     } catch (error) {
-      if (error.response?.status === 400) {
-          toast.info("You are already registered!");
-          setRegisteredEvents([...registeredEvents, eventId]); 
-      } else {
-          toast.error("Failed to register. Please try again.");
-      }
+      toast.error("Failed to register.");
     }
   };
 
@@ -76,18 +78,40 @@ function Event() {
       const res = await axios.post('https://synnex-backend.onrender.com/api/events/create', newEvent, {
         withCredentials: true
       });
-      const createdEvent = res.data?.data?.event || res.data;
-      setEvents([...events, createdEvent]);
+
+      if (res.data?.status === 'success') {
+        setEvents([...events, res.data.data.event]);
+      } else {
+        setEvents([...events, res.data]);
+      }
+
       toast.success("New Event Published! ✅");
       setShowForm(false);
       setNewEvent({ title: "", date: "", time: "", location: "", type: "", description: "" }); 
-    } catch (error) { toast.error("Failed to publish event."); }
+    } catch (error) {
+      console.error("Error creating event:", error);
+      toast.error("Failed to publish event.");
+    }
   };
 
-  // 🔥 Yahan se Delete ka function poora hata diya gaya hai!
+  const handleDelete = async (eventId) => {
+    if (window.confirm("Are you sure you want to delete this event?")) {
+      try {
+        await axios.delete(`https://synnex-backend.onrender.com/api/events/delete/${eventId}`, { 
+          withCredentials: true 
+        });
+        
+        setEvents(events.filter((event) => event._id !== eventId));
+        toast.error("Event Deleted Permanently! 🗑️");
+      } catch (error) {
+        console.error("Error deleting event:", error);
+        toast.error("Failed to delete event.");
+      }
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full relative">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full">
       <ToastContainer position="top-right" autoClose={3000} />
       {loggedIn ? (
         <div className="max-w-6xl mx-auto">
@@ -97,8 +121,7 @@ function Event() {
               <p className="text-gray-500 mt-1">Discover and join events hosted by your alumni network.</p>
             </div>
             
-            {/* 🔥 Sirf Admin ko hi Create Event dikhega */}
-            {userRole === "admin" && (
+            {(userRole === "alumni" || userRole === "teacher" || userRole === "faculty" || userRole === "admin") && (
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="mt-4 sm:mt-0 bg-black text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow-md font-medium z-10"
@@ -108,22 +131,27 @@ function Event() {
             )}
           </div>
 
-          {userRole === "admin" && showForm && (
+          {(userRole === "alumni" || userRole === "teacher" || userRole === "faculty" || userRole === "admin") && showForm && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
               <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Host a New Event</h2>
               <form onSubmit={handleCreateEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input type="text" required value={newEvent.title} onChange={(e) => setNewEvent({...newEvent, title: e.target.value})} placeholder="Event Title" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                
                 <div className="grid grid-cols-2 gap-2">
                   <input type="date" required value={newEvent.date} onChange={(e) => setNewEvent({...newEvent, date: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
                   <input type="time" required value={newEvent.time} onChange={(e) => setNewEvent({...newEvent, time: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md" />
                 </div>
+                
                 <input type="text" required value={newEvent.location} onChange={(e) => setNewEvent({...newEvent, location: e.target.value})} placeholder="Location or Meeting Link" className="w-full px-4 py-2 border border-gray-300 rounded-md" />
+                
                 <select required value={newEvent.type} onChange={(e) => setNewEvent({...newEvent, type: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white">
                   <option value="">Event Type</option>
                   <option value="Online">Online / Virtual</option>
                   <option value="Offline">Offline / In-person</option>
                 </select>
+                
                 <textarea required value={newEvent.description} onChange={(e) => setNewEvent({...newEvent, description: e.target.value})} placeholder="Event Description..." rows="3" className="w-full px-4 py-2 border border-gray-300 rounded-md md:col-span-2"></textarea>
+                
                 <div className="md:col-span-2 flex justify-end">
                   <button type="submit" className="bg-green-600 text-white font-bold px-6 py-2 rounded-lg hover:bg-green-700">Publish Event</button>
                 </div>
@@ -136,6 +164,7 @@ function Event() {
               <p className="text-gray-500 col-span-full text-center py-10">No upcoming events found.</p>
             ) : (
               events.map((event) => {
+                // 🔥 FIX 3: Check karna ki ye wala event registered array mein hai ya nahi
                 const isRegistered = registeredEvents.includes(event._id);
 
                 return (
@@ -151,24 +180,33 @@ function Event() {
                         <span className="text-sm text-gray-500 font-medium">{event.date}</span>
                       </div>
 
-                      {/* 🔥 Delete Button yahan se gayab! */}
+                      {userRole === "admin" && (
+                        <button 
+                          onClick={() => handleDelete(event._id)}
+                          className="absolute top-6 right-4 text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 hover:bg-red-100 rounded text-xs transition z-10"
+                          title="Delete Event (Admin Only)"
+                        >
+                          Delete
+                        </button>
+                      )}
 
-                      <h3 className="text-xl font-bold text-gray-900 mb-2 pr-2">{event.title}</h3>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2 pr-12">{event.title}</h3>
                       <div className="text-sm text-gray-600 mb-4 space-y-1">
                         <p>⏰ {event.time}</p>
                         <p className="truncate">📍 {event.location}</p>
                       </div>
                       <p className="text-gray-600 text-sm flex-grow line-clamp-3 mb-6">{event.description}</p>
                       
+                      {/* 🔥 FIX 4: Button Dynamic ho gaya */}
                       <button 
                         onClick={() => handleRegister(event._id, event.title)}
                         disabled={isRegistered}
                         className={`mt-auto w-full text-center border-2 font-semibold px-4 py-2 rounded-lg transition ${
                           isRegistered 
-                            ? 'bg-gray-400 text-white border-gray-400 cursor-not-allowed'
+                            ? 'bg-gray-400 text-white border-gray-400 cursor-not-allowed' // Agar registered hai
                             : event.type === 'Online' 
-                              ? 'border-black text-black hover:bg-black hover:text-white'
-                              : 'bg-black text-white border-black hover:bg-gray-800'
+                              ? 'border-black text-black hover:bg-black hover:text-white' // Agar nahi hai (Online)
+                              : 'bg-black text-white border-black hover:bg-gray-800'      // Agar nahi hai (Offline)
                         }`}
                       >
                         {isRegistered ? "Registered ✅" : "Register Now"}
