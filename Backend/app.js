@@ -163,7 +163,6 @@ app.post('/api/events/register/:id', async (req, res) => {
     }
 });
 
-// 🔥 YAHAN MAIN CHANGE HAI: NO CRASH, FULL DATABASE SCAN
 app.get('/api/admin/event-attendees/:id', async (req, res) => {
     try {
         const event = await Event.findById(req.params.id).lean();
@@ -224,21 +223,23 @@ app.get('/api/admin/event-attendees/:id', async (req, res) => {
     }
 });
 
+// 🔥 THE ULTIMATE GHOST KILLER API
 app.delete('/api/admin/event/:eventId/attendee/:userId', async (req, res) => {
     try {
         const { eventId, userId } = req.params;
-        let objectId = null;
+        
+        // Array banaya jo String aur ObjectId dono formats ko hamesha nikal fekega
+        let pullQuery = [userId, userId.toString()]; 
+        
         if (mongoose.isValidObjectId(userId)) {
-            objectId = new mongoose.Types.ObjectId(userId);
+            pullQuery.push(new mongoose.Types.ObjectId(userId));
         }
 
         const event = await Event.findByIdAndUpdate(
             eventId,
             { 
                 $pull: { 
-                    attendees: { 
-                        $in: objectId ? [userId, objectId, userId.toString()] : [userId, userId.toString()] 
-                    } 
+                    attendees: { $in: pullQuery } 
                 } 
             },
             { new: true }

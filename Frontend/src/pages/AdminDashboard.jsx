@@ -123,14 +123,19 @@ function AdminDashboard() {
   };
 
   const viewAttendees = async (eventId) => {
-    setCurrentEventId(eventId); // Store current event ID
+    setCurrentEventId(eventId);
     setShowAttendeesModal(true);
     setLoadingAttendees(true);
     try {
       const res = await axios.get(`https://synnex-backend.onrender.com/api/admin/event-attendees/${eventId}`, { withCredentials: true });
-      setAttendeesList(res.data);
+      
+      // 🔥 NAYA FIX: Filter ghost data frontend level pe hi hata dega!
+      const validAttendees = res.data.filter(user => user.firstName !== "Unknown User");
+      setAttendeesList(validAttendees);
+      
     } catch (error) {
       alert("Could not fetch attendees list.");
+      setAttendeesList([]); // Reset on error
     } finally {
       setLoadingAttendees(false);
     }
