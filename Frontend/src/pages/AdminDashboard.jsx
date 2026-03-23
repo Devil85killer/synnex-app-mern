@@ -255,7 +255,6 @@ function AdminDashboard() {
                              <div className="flex items-center space-x-3">
                                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
                                 
-                                {/* ADMIN VIEW REGISTRATIONS BUTTON */}
                                 <button 
                                   onClick={() => viewAttendees(event._id)} 
                                   className="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded font-bold text-sm transition"
@@ -299,7 +298,6 @@ function AdminDashboard() {
 
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
-      {/* SIDEBAR */}
       <div className="w-64 bg-black text-white flex flex-col shadow-2xl z-10">
         <div className="p-6 text-2xl font-bold border-b border-gray-800 tracking-wider">
           SYNNEX <span className="text-sm font-light block text-gray-400">Admin Panel</span>
@@ -317,7 +315,6 @@ function AdminDashboard() {
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="bg-white shadow-sm p-4 flex justify-between items-center px-8 z-0">
             <h1 className="text-xl font-bold text-gray-800 uppercase tracking-wide">{activeTab.replace('-', ' ')}</h1>
@@ -331,19 +328,22 @@ function AdminDashboard() {
         </main>
       </div>
 
-      {/* 🔥 FIX: ATTENDEES MODAL KA CLOSE BUTTON EK DUM CORNER MEIN FIX KIYA HAI */}
+      {/* 🔥 FIX: YAHAN CLOSE BUTTON EKDUM PERFECTLY ALIGN KIYA HAI */}
       {showAttendeesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative">
-            <div className="flex items-center p-4 border-b bg-gray-50 relative">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            
+            {/* Header with Perfect Flex Justify-Between */}
+            <div className="flex justify-between items-center p-5 border-b bg-gray-50 w-full">
               <h3 className="text-lg font-bold text-gray-900">👥 Registered Attendees</h3>
               <button 
                 onClick={() => setShowAttendeesModal(false)} 
-                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-3xl font-bold transition leading-none"
+                className="text-gray-500 hover:text-red-600 text-3xl font-bold leading-none focus:outline-none transition"
               >
                 &times;
               </button>
             </div>
+
             <div className="p-4 max-h-96 overflow-y-auto">
                 {loadingAttendees ? (
                     <div className="flex justify-center py-8"><p className="text-gray-500 font-medium animate-pulse">Loading data...</p></div>
@@ -365,8 +365,9 @@ function AdminDashboard() {
                     </ul>
                 )}
             </div>
-            <div className="p-4 border-t bg-gray-50">
-               <button onClick={() => setShowAttendeesModal(false)} className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 font-bold transition">Close</button>
+            
+            <div className="p-4 border-t bg-gray-50 w-full">
+               <button onClick={() => setShowAttendeesModal(false)} className="w-full bg-black text-white py-2.5 rounded-lg hover:bg-gray-800 font-bold transition">Close</button>
             </div>
           </div>
         </div>
