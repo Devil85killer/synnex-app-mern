@@ -151,28 +151,23 @@ app.delete('/api/admin/event/:id', async (req, res) => {
 });
 
 // ============================================================
-// 🔥 NAYA: EVENT REGISTRATION & ATTENDEES APIs
+// 🔥 100% BULLETPROOF EVENT REGISTRATION APIs
 // ============================================================
 
-// 1. USER REGISTRATION KE LIYE API
+// 1. REGISTRATION API
 app.post('/api/events/register/:id', async (req, res) => {
     try {
         const { userId } = req.body;
-        const event = await Event.findById(req.params.id);
+        if (!userId) return res.status(400).json({ message: "User ID missing!" });
+
+        // 🔥 FIX: `strict: false` aur `$addToSet` guarantee karta hai ki data save hoga hi hoga
+        const event = await Event.findByIdAndUpdate(
+            req.params.id,
+            { $addToSet: { attendees: userId } },
+            { new: true, strict: false } 
+        );
         
         if (!event) return res.status(404).json({ message: "Event not found" });
-
-        // Agar attendees array nahi hai, toh empty array set karo
-        if (!event.attendees) event.attendees = [];
-
-        // Check karo ki pehle se toh register nahi hai
-        if (event.attendees.includes(userId)) {
-            return res.status(400).json({ message: "Already registered!" });
-        }
-
-        // Add user ID to attendees
-        event.attendees.push(userId);
-        await event.save();
         
         res.status(200).json({ message: "Registration successful!", event });
     } catch (error) {
@@ -181,17 +176,24 @@ app.post('/api/events/register/:id', async (req, res) => {
     }
 });
 
-// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API (BULLETPROOF FIX)
+// 2. ADMIN ATTENDEES FETCH API
 app.get('/api/admin/event-attendees/:id', async (req, res) => {
     try {
-        const event = await Event.findById(req.params.id);
+        // 🔥 FIX: `.lean()` use kiya taaki bina schema restrictions ke data padha ja sake
+        const event = await Event.findById(req.params.id).lean();
         
         if (!event) return res.status(404).json({ message: "Event not found" });
         
-        // 🔥 FIX: Bina populate use kiye, seedha User database se un IDs ko dhoondh rahe hain
+        const attendeesArray = event.attendees || [];
+        
+        if (attendeesArray.length === 0) {
+            return res.status(200).json([]);
+        }
+
+        // Object ID ya String dono ko handle karega
         const attendeesList = await User.find({
-            _id: { $in: event.attendees || [] }
-        }).select('firstName lastName email role'); // Sirf zaroori data bhejo
+            _id: { $in: attendeesArray }
+        }).select('firstName lastName email role');
         
         res.status(200).json(attendeesList);
     } catch (error) {

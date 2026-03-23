@@ -34,9 +34,10 @@ function Event() {
         let fetchedEvents = res.data?.data?.events || res.data;
         setEvents(fetchedEvents);
 
-        if (userData?._id && Array.isArray(fetchedEvents)) {
+        if (userData && Array.isArray(fetchedEvents)) {
+            const currentUserId = userData._id || userData.id;
             const userRegEvents = fetchedEvents
-                .filter(ev => ev.attendees && ev.attendees.includes(userData._id))
+                .filter(ev => ev.attendees && ev.attendees.includes(currentUserId))
                 .map(ev => ev._id);
             setRegisteredEvents(userRegEvents);
         }
@@ -54,8 +55,10 @@ function Event() {
 
   const handleRegister = async (eventId, eventName) => {
     try {
+      const currentUserId = userData?._id || userData?.id;
+      
       await axios.post(`https://synnex-backend.onrender.com/api/events/register/${eventId}`, {
-        userId: userData._id
+        userId: currentUserId
       });
       
       setRegisteredEvents([...registeredEvents, eventId]);
@@ -84,8 +87,6 @@ function Event() {
     } catch (error) { toast.error("Failed to publish event."); }
   };
 
-  // 🔥 Yahan se Delete ka function poora hata diya gaya hai!
-
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full relative">
       <ToastContainer position="top-right" autoClose={3000} />
@@ -97,7 +98,6 @@ function Event() {
               <p className="text-gray-500 mt-1">Discover and join events hosted by your alumni network.</p>
             </div>
             
-            {/* 🔥 Sirf Admin ko hi Create Event dikhega */}
             {userRole === "admin" && (
               <button
                 onClick={() => setShowForm(!showForm)}
@@ -150,8 +150,6 @@ function Event() {
                         </span>
                         <span className="text-sm text-gray-500 font-medium">{event.date}</span>
                       </div>
-
-                      {/* 🔥 Delete Button yahan se gayab! */}
 
                       <h3 className="text-xl font-bold text-gray-900 mb-2 pr-2">{event.title}</h3>
                       <div className="text-sm text-gray-600 mb-4 space-y-1">
