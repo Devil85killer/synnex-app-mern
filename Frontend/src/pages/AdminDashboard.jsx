@@ -24,6 +24,12 @@ function AdminDashboard() {
   // Modals States
   const [showEventModal, setShowEventModal] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
+  
+  // 🔥 NAYA: ATTENDEES MODAL STATE
+  const [showAttendeesModal, setShowAttendeesModal] = useState(false);
+  const [attendeesList, setAttendeesList] = useState([]);
+  const [loadingAttendees, setLoadingAttendees] = useState(false);
+
   const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', description: '' });
   const [newNotice, setNewNotice] = useState({ title: '', content: '', type: 'Notice' });
 
@@ -67,7 +73,6 @@ function AdminDashboard() {
     }
   };
 
-  // 🔥 NAYA: ADMIN RESET PASSWORD HANDLER
   const handleResetPassword = async (userId, userName) => {
     if (window.confirm(`Are you sure you want to reset the password for ${userName}? It will be changed to 'synnex123'.`)) {
       try {
@@ -130,6 +135,20 @@ function AdminDashboard() {
     }
   };
 
+  // 🔥 NAYA: FETCH ATTENDEES FOR ADMIN
+  const viewAttendees = async (eventId) => {
+    setShowAttendeesModal(true);
+    setLoadingAttendees(true);
+    try {
+      const res = await axios.get(`https://synnex-backend.onrender.com/api/admin/event-attendees/${eventId}`, { withCredentials: true });
+      setAttendeesList(res.data);
+    } catch (error) {
+      alert("Could not fetch attendees list.");
+    } finally {
+      setLoadingAttendees(false);
+    }
+  };
+
   const renderContent = () => {
     if (loading) return <div className="p-10 text-center font-bold">Loading Admin Data...</div>;
 
@@ -178,7 +197,6 @@ function AdminDashboard() {
                       <td className="p-4">{user.email}</td>
                       <td className="p-4 capitalize font-medium">{user.role}</td>
                       <td className="p-4 text-center space-x-2">
-                        {/* 🔥 NAYA: Reset Password Button */}
                         <button onClick={() => handleResetPassword(user._id, user.firstName)} className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 px-3 py-1 rounded transition hover:bg-blue-100">Reset Pass</button>
                         <button onClick={() => handleDeleteUser(user._id, user.firstName)} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded transition hover:bg-red-100">Delete</button>
                       </td>
@@ -287,14 +305,64 @@ function AdminDashboard() {
                                <h3 className="font-bold text-lg text-black">{event.title}</h3>
                                <p className="text-sm text-gray-600 font-medium">{new Date(event.date).toDateString()} • {event.location}</p>
                              </div>
+                             
+                             {/* 🔥 FIX: YAHAN VIEW REGISTRATIONS BUTTON ADD KIYA HAI */}
                              <div className="flex items-center space-x-3">
                                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
-                                <button onClick={() => handleDeleteEvent(event._id, event.title)} className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded font-bold text-sm transition">Delete</button>
+                                
+                                <button 
+                                  onClick={() => viewAttendees(event._id)} 
+                                  className="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded font-bold text-sm transition"
+                                >
+                                  👥 View Registrations ({event.attendees ? event.attendees.length : 0})
+                                </button>
+                                
+                                <button 
+                                  onClick={() => handleDeleteEvent(event._id, event.title)} 
+                                  className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded font-bold text-sm transition"
+                                >
+                                  Delete
+                                </button>
                              </div>
                          </div>
                      ))}
                  </div>
             )}
+
+            {/* 🔥 FIX: YAHAN ATTENDEES MODAL ADD KIYA HAI */}
+            {showAttendeesModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm p-4">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                  <div className="flex justify-between items-center p-4 border-b">
+                    <h3 className="text-lg font-bold text-gray-900">Registered Users</h3>
+                    <button onClick={() => setShowAttendeesModal(false)} className="text-gray-500 hover:text-red-500 text-xl font-bold">×</button>
+                  </div>
+                  <div className="p-4 max-h-96 overflow-y-auto bg-gray-50">
+                      {loadingAttendees ? (
+                          <p className="text-center text-gray-500 my-4">Loading data...</p>
+                      ) : attendeesList.length === 0 ? (
+                          <p className="text-center text-gray-500 my-4">No one has registered yet.</p>
+                      ) : (
+                          <ul className="space-y-3">
+                              {attendeesList.map((user, idx) => (
+                                  <li key={idx} className="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center">
+                                      <div>
+                                        <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
+                                        <p className="text-sm text-gray-500">{user.email}</p>
+                                      </div>
+                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold capitalize">{user.role || 'User'}</span>
+                                  </li>
+                              ))}
+                          </ul>
+                      )}
+                  </div>
+                  <div className="p-4 border-t bg-white">
+                     <button onClick={() => setShowAttendeesModal(false)} className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 font-bold transition">Close</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* EVENT CREATION MODAL */}
             {showEventModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">

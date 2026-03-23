@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getLoggedIn, getUserRole, getUserData } from '../services/authService';
+import { getLoggedIn, getUserRole, getUserData } from '../services/authService'; // 🔥 getUserData add kiya hai
 import NotLoggedIn from './helper/NotLoggedIn';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 function Event() {
   const loggedIn = getLoggedIn();
-  const userData = getUserData();
+  const userData = getUserData(); // Current user ka data (ID wagera)
   const role = getUserRole();
   const userRole = role?.toLowerCase();
 
@@ -15,7 +15,7 @@ function Event() {
   const [events, setEvents] = useState([]);
   const [registeredEvents, setRegisteredEvents] = useState([]); 
 
-  // ADMIN POPUP STATES
+  // 🔥 ADMIN POPUP STATES
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [attendeesList, setAttendeesList] = useState([]);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
@@ -30,6 +30,7 @@ function Event() {
         let fetchedEvents = res.data?.data?.events || res.data;
         setEvents(fetchedEvents);
 
+        // Check which events current user is already registered for
         if (userData?._id && Array.isArray(fetchedEvents)) {
             const userRegEvents = fetchedEvents
                 .filter(ev => ev.attendees && ev.attendees.includes(userData._id))
@@ -48,6 +49,7 @@ function Event() {
     if (loggedIn) fetchEvents();
   }, [loggedIn]);
 
+  // 🔥 ASLI REGISTRATION API CALL YAHAN HO RAHI HAI
   const handleRegister = async (eventId, eventName) => {
     try {
       await axios.post(`https://synnex-backend.onrender.com/api/events/register/${eventId}`, {
@@ -59,7 +61,7 @@ function Event() {
     } catch (error) {
       if (error.response?.status === 400) {
           toast.info("You are already registered!");
-          setRegisteredEvents([...registeredEvents, eventId]); 
+          setRegisteredEvents([...registeredEvents, eventId]); // Update state just in case
       } else {
           toast.error("Failed to register. Please try again.");
       }
@@ -88,6 +90,7 @@ function Event() {
     }
   };
 
+  // 🔥 FETCH & SHOW ATTENDEES (For Admin)
   const viewAttendees = async (eventId) => {
       setShowAttendeesModal(true);
       setLoadingAttendees(true);
@@ -112,8 +115,7 @@ function Event() {
               <p className="text-gray-500 mt-1">Discover and join events hosted by your alumni network.</p>
             </div>
             
-            {/* 🔥 FIX: Yahan sirf 'admin' condition rakhi hai */}
-            {userRole === "admin" && (
+            {(userRole === "alumni" || userRole === "teacher" || userRole === "faculty" || userRole === "admin") && (
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="mt-4 sm:mt-0 bg-black text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow-md font-medium z-10"
@@ -123,8 +125,7 @@ function Event() {
             )}
           </div>
 
-          {/* 🔥 FIX: Yahan bhi sirf 'admin' condition rakhi hai */}
-          {userRole === "admin" && showForm && (
+          {(userRole === "alumni" || userRole === "teacher" || userRole === "faculty" || userRole === "admin") && showForm && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
               <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Host a New Event</h2>
               <form onSubmit={handleCreateEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -166,6 +167,7 @@ function Event() {
                         <span className="text-sm text-gray-500 font-medium">{event.date}</span>
                       </div>
 
+                      {/* ADMIN BUTTONS */}
                       {userRole === "admin" && (
                         <div className="absolute top-6 right-4 flex gap-2 z-10">
                           <button 
@@ -192,7 +194,6 @@ function Event() {
                       </div>
                       <p className="text-gray-600 text-sm flex-grow line-clamp-3 mb-6">{event.description}</p>
                       
-                      {/* Normal users ke liye Register button (Admin ke liye bhi chalega test karne ko) */}
                       <button 
                         onClick={() => handleRegister(event._id, event.title)}
                         disabled={isRegistered}
@@ -219,7 +220,7 @@ function Event() {
         </div>
       )}
 
-      {/* ADMIN REGISTRATIONS MODAL */}
+      {/* 🔥 ADMIN REGISTRATIONS MODAL (POPUP) */}
       {showAttendeesModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -250,6 +251,7 @@ function Event() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
