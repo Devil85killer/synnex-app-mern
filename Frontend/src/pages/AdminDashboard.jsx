@@ -25,7 +25,7 @@ function AdminDashboard() {
   const [showEventModal, setShowEventModal] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
   
-  // 🔥 NAYA: ATTENDEES MODAL STATE
+  // 🔥 ATTENDEES MODAL STATE (ADMIN EXCLUSIVE)
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [attendeesList, setAttendeesList] = useState([]);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
@@ -40,21 +40,11 @@ function AdminDashboard() {
   }, [loggedIn, userRole, navigate]);
 
   // APIs Functions
-  const fetchUsers = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); setUsers(res.data); } catch (err) {}
-  };
-  const fetchJobs = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {}
-  };
-  const fetchEvents = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {}
-  };
-  const fetchNews = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {}
-  };
-  const fetchFeedbacks = async () => {
-    try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); setFeedbacks(res.data); } catch (err) {}
-  };
+  const fetchUsers = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); setUsers(res.data); } catch (err) {} };
+  const fetchJobs = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {} };
+  const fetchEvents = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {} };
+  const fetchNews = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {} };
+  const fetchFeedbacks = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); setFeedbacks(res.data); } catch (err) {} };
 
   useEffect(() => {
     if (userRole === 'admin') {
@@ -78,9 +68,7 @@ function AdminDashboard() {
       try {
         await axios.put(`https://synnex-backend.onrender.com/api/admin/reset-password/${userId}`, {}, { withCredentials: true });
         alert(`Success! Password for ${userName} is now 'synnex123'.`);
-      } catch (error) { 
-        alert("Failed to reset password."); 
-      }
+      } catch (error) { alert("Failed to reset password."); }
     }
   };
 
@@ -105,9 +93,7 @@ function AdminDashboard() {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent, {
-        withCredentials: true
-      });
+      const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent, { withCredentials: true });
       setEvents([...events, res.data]); 
       setShowEventModal(false); 
       setNewEvent({ title: '', date: '', location: '', description: '' }); 
@@ -135,7 +121,7 @@ function AdminDashboard() {
     }
   };
 
-  // 🔥 NAYA: FETCH ATTENDEES FOR ADMIN
+  // 🔥 FETCH ATTENDEES (Admin dekhega kaun aaya hai)
   const viewAttendees = async (eventId) => {
     setShowAttendeesModal(true);
     setLoadingAttendees(true);
@@ -156,22 +142,10 @@ function AdminDashboard() {
       case 'dashboard':
         return (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100">
-              <p className="text-gray-500 text-sm">Total Users</p>
-              <h3 className="text-3xl font-bold">{users.length}</h3>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100">
-              <p className="text-gray-500 text-sm">Jobs Listed</p>
-              <h3 className="text-3xl font-bold">{jobs.length}</h3>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100">
-              <p className="text-gray-500 text-sm">Active Events</p>
-              <h3 className="text-3xl font-bold">{events.length}</h3>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100">
-              <p className="text-gray-500 text-sm">Feedback Received</p>
-              <h3 className="text-3xl font-bold">{feedbacks.length}</h3>
-            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100"><p className="text-gray-500 text-sm">Total Users</p><h3 className="text-3xl font-bold">{users.length}</h3></div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100"><p className="text-gray-500 text-sm">Jobs Listed</p><h3 className="text-3xl font-bold">{jobs.length}</h3></div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100"><p className="text-gray-500 text-sm">Active Events</p><h3 className="text-3xl font-bold">{events.length}</h3></div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100"><p className="text-gray-500 text-sm">Feedback Received</p><h3 className="text-3xl font-bold">{feedbacks.length}</h3></div>
           </div>
         );
 
@@ -184,18 +158,11 @@ function AdminDashboard() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
-                    <th className="p-4 font-bold">Name</th><th className="p-4 font-bold">Email</th>
-                    <th className="p-4 font-bold">Role</th><th className="p-4 font-bold text-center">Action</th>
-                  </tr>
-                </thead>
+                <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200"><th className="p-4 font-bold">Name</th><th className="p-4 font-bold">Email</th><th className="p-4 font-bold">Role</th><th className="p-4 font-bold text-center">Action</th></tr></thead>
                 <tbody className="text-gray-700">
                   {users.map((user) => (
                     <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                      <td className="p-4 font-medium text-gray-900">{user.firstName} {user.lastName}</td>
-                      <td className="p-4">{user.email}</td>
-                      <td className="p-4 capitalize font-medium">{user.role}</td>
+                      <td className="p-4 font-medium text-gray-900">{user.firstName} {user.lastName}</td><td className="p-4">{user.email}</td><td className="p-4 capitalize font-medium">{user.role}</td>
                       <td className="p-4 text-center space-x-2">
                         <button onClick={() => handleResetPassword(user._id, user.firstName)} className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 px-3 py-1 rounded transition hover:bg-blue-100">Reset Pass</button>
                         <button onClick={() => handleDeleteUser(user._id, user.firstName)} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded transition hover:bg-red-100">Delete</button>
@@ -218,11 +185,7 @@ function AdminDashboard() {
             <div className="space-y-4">
               {news.map(n => (
                 <div key={n._id} className="border p-4 rounded-lg flex justify-between">
-                  <div>
-                    <span className="text-xs font-bold uppercase bg-blue-100 px-2 py-1 rounded text-blue-700">{n.type}</span>
-                    <h3 className="font-bold mt-2">{n.title}</h3>
-                    <p className="text-gray-600 text-sm">{n.content}</p>
-                  </div>
+                  <div><span className="text-xs font-bold uppercase bg-blue-100 px-2 py-1 rounded text-blue-700">{n.type}</span><h3 className="font-bold mt-2">{n.title}</h3><p className="text-gray-600 text-sm">{n.content}</p></div>
                   <button onClick={() => handleDeleteNews(n._id)} className="text-red-500 font-bold">Delete</button>
                 </div>
               ))}
@@ -233,16 +196,9 @@ function AdminDashboard() {
                         <h2 className="text-xl font-bold mb-4">Post New Notice</h2>
                         <form onSubmit={handleCreateNews} className="space-y-4">
                             <input type="text" placeholder="Title" required className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-black" value={newNotice.title} onChange={e => setNewNotice({...newNotice, title: e.target.value})} />
-                            <select className="w-full border p-3 rounded-lg outline-none" value={newNotice.type} onChange={e => setNewNotice({...newNotice, type: e.target.value})}>
-                                <option value="Notice">Notice</option>
-                                <option value="News">News</option>
-                                <option value="Update">Update</option>
-                            </select>
+                            <select className="w-full border p-3 rounded-lg outline-none" value={newNotice.type} onChange={e => setNewNotice({...newNotice, type: e.target.value})}><option value="Notice">Notice</option><option value="News">News</option><option value="Update">Update</option></select>
                             <textarea placeholder="Content..." required className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-black" rows="4" value={newNotice.content} onChange={e => setNewNotice({...newNotice, content: e.target.value})}></textarea>
-                            <div className="flex justify-end space-x-2 pt-4">
-                                <button type="button" onClick={() => setShowNewsModal(false)} className="px-4 py-2 font-bold text-gray-500">Cancel</button>
-                                <button type="submit" className="bg-black text-white px-6 py-2 rounded-lg font-bold">Publish Now</button>
-                            </div>
+                            <div className="flex justify-end space-x-2 pt-4"><button type="button" onClick={() => setShowNewsModal(false)} className="px-4 py-2 font-bold text-gray-500">Cancel</button><button type="submit" className="bg-black text-white px-6 py-2 rounded-lg font-bold">Publish Now</button></div>
                         </form>
                     </div>
                 </div>
@@ -256,11 +212,7 @@ function AdminDashboard() {
             <h2 className="text-2xl font-bold mb-6">User Feedback Dashboard</h2>
             <div className="space-y-4">
               {feedbacks.length === 0 ? <p className="text-gray-400 text-center py-10">No feedback received yet.</p> : feedbacks.map(f => (
-                <div key={f._id} className="border-b pb-4 last:border-0">
-                  <p className="font-bold text-gray-800">{f.userId?.firstName || 'User'} {f.userId?.lastName || ''}:</p>
-                  <p className="text-gray-600 italic">"{f.message}"</p>
-                  <p className="text-xs text-gray-400 mt-1">{new Date(f.createdAt).toLocaleString()}</p>
-                </div>
+                <div key={f._id} className="border-b pb-4 last:border-0"><p className="font-bold text-gray-800">{f.userId?.firstName || 'User'} {f.userId?.lastName || ''}:</p><p className="text-gray-600 italic">"{f.message}"</p><p className="text-xs text-gray-400 mt-1">{new Date(f.createdAt).toLocaleString()}</p></div>
               ))}
             </div>
           </div>
@@ -270,16 +222,11 @@ function AdminDashboard() {
         return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
             <h2 className="text-2xl font-bold mb-6">Job Board Control</h2>
-            {jobs.length === 0 ? (
-                <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">No jobs posted yet.</p>
-            ) : (
+            {jobs.length === 0 ? ( <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">No jobs posted yet.</p> ) : (
                 <div className="space-y-4">
                     {jobs.map(job => (
                         <div key={job._id} className="border border-gray-200 p-4 rounded-lg flex justify-between items-center hover:bg-gray-50 transition">
-                            <div>
-                                <h3 className="font-bold text-lg text-gray-900">{job.title || "Job Title"}</h3>
-                                <p className="text-sm text-gray-600">{job.company || "Company"} • {job.location || "Location"}</p>
-                            </div>
+                            <div><h3 className="font-bold text-lg text-gray-900">{job.title || "Job Title"}</h3><p className="text-sm text-gray-600">{job.company || "Company"} • {job.location || "Location"}</p></div>
                             <button onClick={()=> handleDeleteJob(job._id, job.title)} className="text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2 rounded font-bold text-sm transition">Delete Job</button>
                         </div>
                     ))}
@@ -296,7 +243,7 @@ function AdminDashboard() {
                 <button onClick={() => setShowEventModal(true)} className="bg-black hover:bg-gray-800 transition text-white px-4 py-2 rounded-lg font-bold shadow-lg">+ Create New Event</button>
             </div>
              {events.length === 0 ? (
-                <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">No events found. Click 'Create New Event' to add one.</p>
+                <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">No events found.</p>
             ) : (
                  <div className="space-y-4">
                      {events.map(event => (
@@ -306,15 +253,15 @@ function AdminDashboard() {
                                <p className="text-sm text-gray-600 font-medium">{new Date(event.date).toDateString()} • {event.location}</p>
                              </div>
                              
-                             {/* 🔥 FIX: YAHAN VIEW REGISTRATIONS BUTTON ADD KIYA HAI */}
                              <div className="flex items-center space-x-3">
                                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
                                 
+                                {/* 🔥 ADMIN VIEW REGISTRATIONS BUTTON */}
                                 <button 
                                   onClick={() => viewAttendees(event._id)} 
                                   className="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded font-bold text-sm transition"
                                 >
-                                  👥 View Registrations ({event.attendees ? event.attendees.length : 0})
+                                  👥 View ({event.attendees ? event.attendees.length : 0})
                                 </button>
                                 
                                 <button 
@@ -329,66 +276,17 @@ function AdminDashboard() {
                  </div>
             )}
 
-            {/* 🔥 FIX: YAHAN ATTENDEES MODAL ADD KIYA HAI */}
-            {showAttendeesModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-                  <div className="flex justify-between items-center p-4 border-b">
-                    <h3 className="text-lg font-bold text-gray-900">Registered Users</h3>
-                    <button onClick={() => setShowAttendeesModal(false)} className="text-gray-500 hover:text-red-500 text-xl font-bold">×</button>
-                  </div>
-                  <div className="p-4 max-h-96 overflow-y-auto bg-gray-50">
-                      {loadingAttendees ? (
-                          <p className="text-center text-gray-500 my-4">Loading data...</p>
-                      ) : attendeesList.length === 0 ? (
-                          <p className="text-center text-gray-500 my-4">No one has registered yet.</p>
-                      ) : (
-                          <ul className="space-y-3">
-                              {attendeesList.map((user, idx) => (
-                                  <li key={idx} className="bg-white p-3 rounded shadow-sm border border-gray-100 flex justify-between items-center">
-                                      <div>
-                                        <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
-                                        <p className="text-sm text-gray-500">{user.email}</p>
-                                      </div>
-                                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold capitalize">{user.role || 'User'}</span>
-                                  </li>
-                              ))}
-                          </ul>
-                      )}
-                  </div>
-                  <div className="p-4 border-t bg-white">
-                     <button onClick={() => setShowAttendeesModal(false)} className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 font-bold transition">Close</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* EVENT CREATION MODAL */}
             {showEventModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 backdrop-blur-sm">
                 <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border border-gray-100">
                   <h2 className="text-2xl font-bold mb-6 text-gray-800">Create New Event</h2>
                   <form onSubmit={handleCreateEvent} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Event Title</label>
-                      <input type="text" required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="e.g. Alumni Meet 2026" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Date</label>
-                      <input type="date" required value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Location / Venue</label>
-                      <input type="text" required value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="e.g. Main Auditorium" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                      <textarea required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" placeholder="Event details..." rows="3"></textarea>
-                    </div>
-                    <div className="flex justify-end space-x-3 mt-8">
-                      <button type="button" onClick={() => setShowEventModal(false)} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg font-bold transition">Cancel</button>
-                      <button type="submit" className="px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg font-bold shadow-lg transition">Publish Event</button>
-                    </div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Event Title</label><input type="text" required value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Date</label><input type="date" required value={newEvent.date} onChange={e => setNewEvent({...newEvent, date: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Location / Venue</label><input type="text" required value={newEvent.location} onChange={e => setNewEvent({...newEvent, location: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" /></div>
+                    <div><label className="block text-sm font-bold text-gray-700 mb-1">Description</label><textarea required value={newEvent.description} onChange={e => setNewEvent({...newEvent, description: e.target.value})} className="block w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black focus:border-black outline-none transition" rows="3"></textarea></div>
+                    <div className="flex justify-end space-x-3 mt-8"><button type="button" onClick={() => setShowEventModal(false)} className="px-5 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg font-bold transition">Cancel</button><button type="submit" className="px-5 py-2.5 bg-black hover:bg-gray-800 text-white rounded-lg font-bold shadow-lg transition">Publish Event</button></div>
                   </form>
                 </div>
               </div>
@@ -433,6 +331,43 @@ function AdminDashboard() {
             {renderContent()}
         </main>
       </div>
+
+      {/* 🔥 ATTENDEES MODAL (OUTSIDE RENDER CONTENT TO AVOID GLITCHES) */}
+      {showAttendeesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+              <h3 className="text-lg font-bold text-gray-900">👥 Registered Attendees</h3>
+              <button onClick={() => setShowAttendeesModal(false)} className="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+            </div>
+            <div className="p-4 max-h-96 overflow-y-auto">
+                {loadingAttendees ? (
+                    <div className="flex justify-center py-8"><p className="text-gray-500 font-medium animate-pulse">Loading data...</p></div>
+                ) : attendeesList.length === 0 ? (
+                    <div className="text-center py-8"><p className="text-gray-400">No one has registered yet.</p></div>
+                ) : (
+                    <ul className="space-y-3">
+                        {attendeesList.map((user, idx) => (
+                            <li key={idx} className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex justify-between items-center">
+                                <div>
+                                  <p className="font-bold text-gray-800">{user.firstName} {user.lastName}</p>
+                                  <p className="text-sm text-gray-500">{user.email}</p>
+                                </div>
+                                <span className={`text-xs px-2 py-1 rounded font-bold capitalize ${user.role === 'student' ? 'bg-blue-100 text-blue-700' : user.role === 'alumni' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
+                                  {user.role || 'User'}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+            <div className="p-4 border-t bg-gray-50">
+               <button onClick={() => setShowAttendeesModal(false)} className="w-full bg-black text-white py-2 rounded-lg hover:bg-gray-800 font-bold transition">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
