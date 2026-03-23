@@ -29,7 +29,7 @@ function AdminDashboard() {
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [attendeesList, setAttendeesList] = useState([]);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
-  const [currentEventId, setCurrentEventId] = useState(null); // 🔥 Remembers which event is currently open
+  const [currentEventId, setCurrentEventId] = useState(null); 
 
   const [newEvent, setNewEvent] = useState({ title: '', date: '', location: '', description: '' });
   const [newNotice, setNewNotice] = useState({ title: '', content: '', type: 'Notice' });
@@ -129,28 +129,32 @@ function AdminDashboard() {
     try {
       const res = await axios.get(`https://synnex-backend.onrender.com/api/admin/event-attendees/${eventId}`, { withCredentials: true });
       
-      // 🔥 NAYA FIX: Filter ghost data frontend level pe hi hata dega!
-      const validAttendees = res.data.filter(user => user.firstName !== "Unknown User");
-      setAttendeesList(validAttendees);
+      // Backend automatically cleans ghost data and sends only valid ones
+      setAttendeesList(res.data);
+      
+      // Live sync the main events array to instantly fix the View (count) mismatch
+      setEvents(prevEvents => prevEvents.map(ev => {
+          if (ev._id === eventId) {
+              return { ...ev, attendees: res.data.map(u => u._id) };
+          }
+          return ev;
+      }));
       
     } catch (error) {
       alert("Could not fetch attendees list.");
-      setAttendeesList([]); // Reset on error
+      setAttendeesList([]);
     } finally {
       setLoadingAttendees(false);
     }
   };
 
-  // 🔥 NEW: Function to remove a user from an event
   const handleRemoveAttendee = async (userId, userName) => {
     if (window.confirm(`Are you sure you want to remove ${userName} from this event?`)) {
       try {
         await axios.delete(`https://synnex-backend.onrender.com/api/admin/event/${currentEventId}/attendee/${userId}`, { withCredentials: true });
         
-        // Remove from the modal list instantly
         setAttendeesList(attendeesList.filter(user => user._id !== userId && user.email !== `ID: ${userId}`));
         
-        // Update the main event list in the background
         setEvents(events.map(ev => {
             if (ev._id === currentEventId) {
                 return { ...ev, attendees: ev.attendees.filter(id => id !== userId && id !== userId.toString()) };
@@ -389,7 +393,6 @@ function AdminDashboard() {
                                   <span className={`text-xs px-2 py-1 rounded font-bold capitalize ${user.role === 'student' ? 'bg-blue-100 text-blue-700' : user.role === 'alumni' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}`}>
                                     {user.role || 'User'}
                                   </span>
-                                  {/* 🔥 REMOVE BUTTON YAHAN PE HAI */}
                                   <button 
                                     onClick={() => handleRemoveAttendee(user._id || user.email.replace('ID: ', ''), user.firstName)}
                                     className="text-red-500 hover:text-white hover:bg-red-500 border border-red-500 px-3 py-1 rounded text-xs font-bold transition"

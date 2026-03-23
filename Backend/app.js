@@ -171,11 +171,9 @@ app.get('/api/admin/event-attendees/:id', async (req, res) => {
         const attendeesArray = event.attendees || [];
         if (attendeesArray.length === 0) return res.status(200).json([]);
 
-        // Database connection uthao
         const db = mongoose.connection.db;
-
-        // ID's ko format karo
         const queryIds = [];
+        
         attendeesArray.forEach(id => {
             if (id) {
                 queryIds.push(id.toString());
@@ -185,61 +183,60 @@ app.get('/api/admin/event-attendees/:id', async (req, res) => {
             }
         });
 
-        // Seedha Alumnis aur Users dono collections mein ek sath search (No complex queries)
         const alumnisData = await db.collection('alumnis').find({ _id: { $in: queryIds } }).toArray();
         const usersData = await db.collection('users').find({ _id: { $in: queryIds } }).toArray();
 
-        // Data mix kar do
         const allData = [...alumnisData, ...usersData];
+        const validAttendeesList = [];
+        const ghostIdsToRemove = []; 
 
-        // Har user ko format karo, agar DB me hai toh naam dikhega, warna "Ghost"
-        const finalAttendeesList = attendeesArray.map(rawId => {
+        attendeesArray.forEach(rawId => {
             const strId = rawId.toString();
             const foundUser = allData.find(u => u._id.toString() === strId);
 
             if (foundUser) {
-                return {
+                validAttendeesList.push({
                     _id: strId,
-                    firstName: foundUser.firstName || foundUser.name || "Alumni",
+                    firstName: foundUser.firstName || foundUser.name || "User",
                     lastName: foundUser.lastName || "",
                     email: foundUser.email || "No Email",
-                    role: foundUser.role || "Alumni"
-                };
+                    role: foundUser.role || "User"
+                });
             } else {
-                return {
-                    _id: strId,
-                    firstName: "Unknown User",
-                    lastName: "(Ghost Data)",
-                    email: `Missing DB ID: ${strId}`,
-                    role: "Deleted"
-                };
+                ghostIdsToRemove.push(rawId); 
             }
         });
 
-        res.status(200).json(finalAttendeesList);
+        // 🔥 Backend auto-deletes the invalid "ghost" users immediately
+        if (ghostIdsToRemove.length > 0) {
+            await Event.findByIdAndUpdate(req.params.id, {
+                $pull: { attendees: { $in: ghostIdsToRemove } }
+            });
+        }
+
+        // Only valid data is returned to the frontend
+        res.status(200).json(validAttendeesList); 
     } catch (error) {
         console.error("CRITICAL ERROR FETCHING:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
 });
 
-// 🔥 THE ULTIMATE GHOST KILLER API
 app.delete('/api/admin/event/:eventId/attendee/:userId', async (req, res) => {
     try {
         const { eventId, userId } = req.params;
-        
-        // Array banaya jo String aur ObjectId dono formats ko hamesha nikal fekega
-        let pullQuery = [userId, userId.toString()]; 
-        
+        let objectId = null;
         if (mongoose.isValidObjectId(userId)) {
-            pullQuery.push(new mongoose.Types.ObjectId(userId));
+            objectId = new mongoose.Types.ObjectId(userId);
         }
 
         const event = await Event.findByIdAndUpdate(
             eventId,
             { 
                 $pull: { 
-                    attendees: { $in: pullQuery } 
+                    attendees: { 
+                        $in: objectId ? [userId, objectId, userId.toString()] : [userId, userId.toString()] 
+                    } 
                 } 
             },
             { new: true }
