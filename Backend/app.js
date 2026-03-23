@@ -176,24 +176,28 @@ app.post('/api/events/register/:id', async (req, res) => {
     }
 });
 
-// 2. ADMIN ATTENDEES FETCH API
+// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API (CRASH-PROOF FIX)
 app.get('/api/admin/event-attendees/:id', async (req, res) => {
     try {
-        // 🔥 FIX: `.lean()` use kiya taaki bina schema restrictions ke data padha ja sake
+        // .lean() lagaya taaki document simple object ban jaye
         const event = await Event.findById(req.params.id).lean();
         
         if (!event) return res.status(404).json({ message: "Event not found" });
         
         const attendeesArray = event.attendees || [];
         
-        if (attendeesArray.length === 0) {
+        // 🔥 CRITICAL FIX: Server crash rokne ke liye sirf VALID ObjectIds lenge
+        const validIds = attendeesArray.filter(id => mongoose.isValidObjectId(id));
+        
+        // Agar array empty hai ya koi valid ID nahi mili, toh empty array bhej do (crash mat karo)
+        if (validIds.length === 0) {
             return res.status(200).json([]);
         }
 
-        // Object ID ya String dono ko handle karega
+        // Sirf valid IDs ko find karo User database mein
         const attendeesList = await User.find({
-            _id: { $in: attendeesArray }
-        }).select('firstName lastName email role');
+            _id: { $in: validIds }
+        }).select('firstName lastName email role'); 
         
         res.status(200).json(attendeesList);
     } catch (error) {
