@@ -76,15 +76,20 @@ function Event() {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://synnex-backend.onrender.com/api/events/create', newEvent, {
+      // 🔥 FIX: Yahan URL badal kar naya admin event API daal diya hai!
+      const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent, {
         withCredentials: true
       });
+      
       const createdEvent = res.data?.data?.event || res.data;
       setEvents([...events, createdEvent]);
       toast.success("New Event Published! ✅");
       setShowForm(false);
       setNewEvent({ title: "", date: "", time: "", location: "", type: "", description: "" }); 
-    } catch (error) { toast.error("Failed to publish event."); }
+    } catch (error) { 
+      console.error("Create Event Error:", error);
+      toast.error("Failed to publish event."); 
+    }
   };
 
   return (
