@@ -65,7 +65,6 @@ app.get('/api/meeting', getMeetingLink);
 // 🕵️‍♂️ ADMIN PANEL APIs (FULL CONNECTION)
 // ============================================================
 
-// --- USER MANAGEMENT ---
 app.get('/api/admin/all-users', async (req, res) => {
   try {
     const users = await User.find({}).select("-password"); 
@@ -80,28 +79,22 @@ app.delete('/api/admin/user/:id', async (req, res) => {
   } catch (error) { res.status(500).json({ message: "Failed to delete user" }); }
 });
 
-// 🔥 NAYA: ADMIN POWER - FORCE RESET PASSWORD API
 app.put('/api/admin/reset-password/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        // Admin reset karega toh password default "synnex123" ho jayega
         const defaultPassword = "synnex123";
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(defaultPassword, salt);
         
-        // 🔥 FIX: user.save() ki jagah updateOne use kiya
         await User.updateOne({ _id: user._id }, { password: hashedPassword });
-        
         res.status(200).json({ message: `Password reset successfully to: ${defaultPassword}` });
     } catch (error) {
-        console.error("Admin Password Reset Error:", error);
         res.status(500).json({ message: "Failed to reset password" });
     }
 });
 
-// --- JOB BOARD CONTROL ---
 app.get('/api/admin/all-jobs', async (req, res) => {
   try {
     if (!Job) return res.status(200).json([]); 
@@ -121,7 +114,6 @@ app.put('/api/admin/job/:id/:action', async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Failed to process job action" }); }
 });
 
-// --- EVENT MANAGER ---
 app.get('/api/admin/all-events', async (req, res) => {
   try {
     if (!Event) return res.status(200).json([]);
@@ -154,13 +146,11 @@ app.delete('/api/admin/event/:id', async (req, res) => {
 // 🔥 100% BULLETPROOF EVENT REGISTRATION APIs
 // ============================================================
 
-// 1. REGISTRATION API
 app.post('/api/events/register/:id', async (req, res) => {
     try {
         const { userId } = req.body;
         if (!userId) return res.status(400).json({ message: "User ID missing!" });
 
-        // 🔥 FIX: `strict: false` aur `$addToSet` guarantee karta hai ki data save hoga hi hoga
         const event = await Event.findByIdAndUpdate(
             req.params.id,
             { $addToSet: { attendees: userId } },
@@ -168,7 +158,6 @@ app.post('/api/events/register/:id', async (req, res) => {
         );
         
         if (!event) return res.status(404).json({ message: "Event not found" });
-        
         res.status(200).json({ message: "Registration successful!", event });
     } catch (error) {
         console.error("Register Error:", error);
@@ -176,29 +165,36 @@ app.post('/api/events/register/:id', async (req, res) => {
     }
 });
 
-// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API (CRASH-PROOF FIX)
+// 🔥 MAA KASAM YAHAN SE FIX KIYA HAI (TYPE MISMATCH & GHOST USER FIX)
 app.get('/api/admin/event-attendees/:id', async (req, res) => {
     try {
-        // .lean() lagaya taaki document simple object ban jaye
         const event = await Event.findById(req.params.id).lean();
         
         if (!event) return res.status(404).json({ message: "Event not found" });
         
         const attendeesArray = event.attendees || [];
-        
-        // 🔥 CRITICAL FIX: Server crash rokne ke liye sirf VALID ObjectIds lenge
         const validIds = attendeesArray.filter(id => mongoose.isValidObjectId(id));
         
-        // Agar array empty hai ya koi valid ID nahi mili, toh empty array bhej do (crash mat karo)
-        if (validIds.length === 0) {
-            return res.status(200).json([]);
-        }
+        if (validIds.length === 0) return res.status(200).json([]);
 
-        // Sirf valid IDs ko find karo User database mein
+        // 1. Strings ko zabardasti MongoDB ObjectIds mein convert kiya
+        const objectIds = validIds.map(id => new mongoose.Types.ObjectId(id.toString()));
+
+        // 2. User database se unhe fetch kiya
         const attendeesList = await User.find({
-            _id: { $in: validIds }
+            _id: { $in: objectIds }
         }).select('firstName lastName email role'); 
         
+        // 3. Agar User database me account nahi mila (Ghost User), toh admin ko bata do
+        if (attendeesList.length === 0 && validIds.length > 0) {
+            return res.status(200).json([{
+                firstName: "Unknown / Deleted",
+                lastName: "User",
+                email: "This account was deleted from database.",
+                role: "Ghost"
+            }]);
+        }
+
         res.status(200).json(attendeesList);
     } catch (error) {
         console.error("Fetch Attendees Error:", error);
@@ -226,7 +222,6 @@ app.post('/api/admin/news', async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Failed to publish notice" }); }
 });
 
-// --- FEEDBACK CONNECTION ---
 app.get('/api/admin/all-feedback', async (req, res) => {
     try {
         if (!Feedback) return res.status(200).json([]);
@@ -235,84 +230,52 @@ app.get('/api/admin/all-feedback', async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Error fetching feedback" }); }
 });
 
-// --- BULK IMPORT (DUMMY CONNECTION FOR UI) ---
 app.post('/api/admin/bulk-import', async (req, res) => {
     res.status(200).json({ message: "Import functionality ready to be implemented with Multer!" });
 });
 
-// ============================================================
-// 🔥 LOGGED-IN USER PASSWORD CHANGE API
-// ============================================================
 app.put('/api/change-password', async (req, res) => {
     try {
         const { userId, currentPassword, newPassword } = req.body;
 
-        if (!userId || !currentPassword || !newPassword) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
+        if (!userId || !currentPassword || !newPassword) return res.status(400).json({ message: "All fields are required" });
 
         const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
+        if (!user) return res.status(404).json({ message: "User not found" });
 
-        // 1. Purana password check karo (Security Test)
         const isMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: "Incorrect current password!" });
-        }
+        if (!isMatch) return res.status(400).json({ message: "Incorrect current password!" });
 
-        // 2. Naya password hash karke update karo
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
-        // 🔥 FIX: user.save() ki jagah updateOne use kiya
         await User.updateOne({ _id: user._id }, { password: hashedPassword });
-
         res.status(200).json({ message: "Password changed successfully!" });
     } catch (error) {
-        console.error("Change Password Error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
 
-// ============================================================
-// 🔥 USER PASSWORD RESET API (BINA OTP KE)
-// ============================================================
 app.post('/api/reset-password-direct', async (req, res) => {
     try {
         const { email, secretAnswer, newPassword } = req.body;
-
-        if (!email || !secretAnswer || !newPassword) {
-            return res.status(400).json({ message: "All fields are required" });
-        }
+        if (!email || !secretAnswer || !newPassword) return res.status(400).json({ message: "All fields are required" });
 
         const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(404).json({ message: "User not found with this email" });
-        }
+        if (!user) return res.status(404).json({ message: "User not found with this email" });
 
-        // Checking Secret Answer (don't break if old users don't have it, handle undefined)
         const storedAnswer = user.secretAnswer || "mumbai"; 
-        if (storedAnswer.toLowerCase() !== secretAnswer.toLowerCase()) {
-            return res.status(401).json({ message: "Incorrect Security Answer!" });
-        }
+        if (storedAnswer.toLowerCase() !== secretAnswer.toLowerCase()) return res.status(401).json({ message: "Incorrect Security Answer!" });
 
-        // Hash new password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
-        // 🔥 FIX: user.save() ki jagah updateOne use kiya
         await User.updateOne({ _id: user._id }, { password: hashedPassword });
-
         res.status(200).json({ message: "Password updated successfully!" });
     } catch (error) {
-        console.error("Password Reset Error:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
-// ============================================================
 
 app.use("/api", router);
 app.use("/", router); 
@@ -332,9 +295,7 @@ async function connectDB() {
     process.exit(1);
   }
 }
-
 connectDB();
-
 app.listen(PORT, function () { console.log("Server is running on port : ", PORT); });
 
 module.exports = app;
