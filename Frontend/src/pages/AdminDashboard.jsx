@@ -25,7 +25,7 @@ function AdminDashboard() {
   const [showEventModal, setShowEventModal] = useState(false);
   const [showNewsModal, setShowNewsModal] = useState(false);
   
-  // 🔥 ATTENDEES MODAL STATE (ADMIN EXCLUSIVE)
+  // ATTENDEES MODAL STATE
   const [showAttendeesModal, setShowAttendeesModal] = useState(false);
   const [attendeesList, setAttendeesList] = useState([]);
   const [loadingAttendees, setLoadingAttendees] = useState(false);
@@ -121,7 +121,6 @@ function AdminDashboard() {
     }
   };
 
-  // 🔥 FETCH ATTENDEES (Admin dekhega kaun aaya hai)
   const viewAttendees = async (eventId) => {
     setShowAttendeesModal(true);
     setLoadingAttendees(true);
@@ -256,7 +255,7 @@ function AdminDashboard() {
                              <div className="flex items-center space-x-3">
                                 <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold border border-green-200">Upcoming</span>
                                 
-                                {/* 🔥 ADMIN VIEW REGISTRATIONS BUTTON */}
+                                {/* ADMIN VIEW REGISTRATIONS BUTTON */}
                                 <button 
                                   onClick={() => viewAttendees(event._id)} 
                                   className="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded font-bold text-sm transition"
@@ -332,13 +331,18 @@ function AdminDashboard() {
         </main>
       </div>
 
-      {/* 🔥 ATTENDEES MODAL (OUTSIDE RENDER CONTENT TO AVOID GLITCHES) */}
+      {/* 🔥 FIX: ATTENDEES MODAL KA CLOSE BUTTON EK DUM CORNER MEIN FIX KIYA HAI */}
       {showAttendeesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative">
+            <div className="flex items-center p-4 border-b bg-gray-50 relative">
               <h3 className="text-lg font-bold text-gray-900">👥 Registered Attendees</h3>
-              <button onClick={() => setShowAttendeesModal(false)} className="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+              <button 
+                onClick={() => setShowAttendeesModal(false)} 
+                className="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-3xl font-bold transition leading-none"
+              >
+                &times;
+              </button>
             </div>
             <div className="p-4 max-h-96 overflow-y-auto">
                 {loadingAttendees ? (
