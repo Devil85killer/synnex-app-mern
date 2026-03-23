@@ -27,6 +27,9 @@ import Meeting from "./Components/Meeting.jsx";
 import Feedback from "./Components/Feedback.jsx";
 import Profile from "./Components/Profile.jsx";
 
+// 🔥 NAYA: Forgot Password ka import yahan add kiya hai
+import ForgotPassword from "./pages/ForgotPassword.jsx"; 
+
 // 🔥 NAYA: Tere Secret Admin Panel ke imports
 import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
@@ -51,6 +54,11 @@ const router = createBrowserRouter([
       {
         path: "login",
         element: <Login />,
+      },
+      // 🔥 NAYA: Forgot Password ka route yahan lagaya hai
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />,
       },
       {
         path: "dashboard",

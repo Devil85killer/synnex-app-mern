@@ -4,7 +4,7 @@ import Select from "react-select";
 import { ToastContainer, toast } from "react-toastify";
 import axios from "axios";
 import { login } from "../features/authSlice";
-import { useNavigate, Link } from "react-router-dom"; // 🔥 Link YAHAN ADD KIYA HAI
+import { useNavigate, Link } from "react-router-dom"; 
 import { useDispatch } from "react-redux";
 import Loader from "../Components/Loader";
 
@@ -53,8 +53,8 @@ function Login() {
 
     try {
       const response = await axios.post(url, userData, {
-    withCredentials: true
-});
+        withCredentials: true
+      });
       
       const payload = {
         ...(response.data.user || response.data[selectedRole.value] || response.data),
@@ -136,6 +136,16 @@ function Login() {
                     placeholder="Enter your password"
                   />
                 </div>
+                
+                {/* 🔥 FORGOT PASSWORD LINK YAHAN ADD KIYA HAI */}
+                <div className="flex justify-end mt-2">
+                  <Link 
+                    to="/forgot-password" 
+                    className="text-sm font-medium text-gray-500 hover:text-black hover:underline transition duration-200"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
               </div>
               
               <div className="pt-2">
@@ -165,7 +175,6 @@ function Login() {
                 </button>
               </div>
 
-              {/* 🔥 REGISTER LINK YAHAN ADD KIYA HAI */}
               <div className="mt-5 text-center">
                 <p className="text-sm text-gray-600">
                   Don't have an account?{' '}
