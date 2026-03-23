@@ -181,16 +181,19 @@ app.post('/api/events/register/:id', async (req, res) => {
     }
 });
 
-// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API (With User Data)
+// 2. ADMIN KO LIST DIKHANE KE LIYE EVENT DETAILS API (BULLETPROOF FIX)
 app.get('/api/admin/event-attendees/:id', async (req, res) => {
     try {
-        // Event dhoondo aur attendees ke IDs ko User collection se unke detail (naam, email) se badal do
-        const event = await Event.findById(req.params.id).populate('attendees', 'firstName lastName email role');
+        const event = await Event.findById(req.params.id);
         
         if (!event) return res.status(404).json({ message: "Event not found" });
         
-        // Sirf attendees ka array return karo
-        res.status(200).json(event.attendees || []);
+        // 🔥 FIX: Bina populate use kiye, seedha User database se un IDs ko dhoondh rahe hain
+        const attendeesList = await User.find({
+            _id: { $in: event.attendees || [] }
+        }).select('firstName lastName email role'); // Sirf zaroori data bhejo
+        
+        res.status(200).json(attendeesList);
     } catch (error) {
         console.error("Fetch Attendees Error:", error);
         res.status(500).json({ message: "Failed to fetch attendees" });
