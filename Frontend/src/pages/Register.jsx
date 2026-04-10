@@ -72,7 +72,8 @@ function Register() {
 
     setSendingOtp(true);
     try {
-      const res = await axios.post("https://synnex-backend.onrender.com/register/send-otp", { 
+      // 🔥 YAHAN /api LAGA DIYA HAI
+      const res = await axios.post("https://synnex-backend.onrender.com/api/register/send-otp", { 
         email: formData.email 
       });
       toast.success(res.data.message || "OTP Sent to your Email!");
@@ -87,10 +88,17 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!otpSent || !formData.otp) {
-      toast.error("Please verify your email with OTP first.");
+    // 🔥 Strict check, takki bina OTP dale form aage na badhe
+    if (!otpSent) {
+      toast.error("Please click 'Get OTP' first.");
       return;
     }
+
+    if (!formData.otp || formData.otp.length < 4) {
+      toast.error("Please enter the 4-digit OTP sent to your email.");
+      return;
+    }
+
     if (!selectedDegree) {
       toast.error("Please select a degree");
       return;
@@ -103,8 +111,9 @@ function Register() {
     setLoading(true);
 
     try {
+      // 🔥 YAHAN BHI /api LAGA DIYA HAI
       const response = await axios.post(
-        "https://synnex-backend.onrender.com/register/user", 
+        "https://synnex-backend.onrender.com/api/register/user", 
         formData
       );
       
