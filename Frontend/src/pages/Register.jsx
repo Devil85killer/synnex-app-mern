@@ -60,6 +60,13 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // 🔥 NAYA: Email Format Validation (Regex)
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address (e.g., name@gmail.com)");
+      return;
+    }
+
     if (!selectedDegree) {
       toast.error("Please select a degree");
       return;
@@ -73,12 +80,11 @@ function Register() {
 
     try {
       const response = await axios.post(
-        "https://synnex-backend.onrender.com/register/user", // Yaad rakhna bhai, local testing ke liye isko localhost kar lena agar zaroorat ho
+        "https://synnex-backend.onrender.com/register/user", 
         formData
       );
       
       if (response.data.status === "success" || response.status === 200 || response.status === 201) {
-        // 🔥 Custom toast message directly backend se la sakte hain yahan
         toast.success(response.data.message || "Registration successful!");
         setTimeout(() => {
           navigate("/login");
@@ -144,7 +150,7 @@ function Register() {
                   placeholder="Password"
                 />
 
-                {/* 🔥 1. ROLE DROPDOWN MOVED HERE 🔥 */}
+                {/* ROLE DROPDOWN MOVED HERE */}
                 <Select
                   options={roleOptions}
                   value={selectedRole}
@@ -153,8 +159,7 @@ function Register() {
                   className="text-sm text-left"
                 />
 
-                {/* 🔥 2. CONDITIONAL YEAR INPUTS 🔥 */}
-                {/* Agar student ya alumni hai tabhi ye block dikhega */}
+                {/* CONDITIONAL YEAR INPUTS */}
                 {(formData.role === "student" || formData.role === "alumni") && (
                   <div className={`grid ${formData.role === "alumni" ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
                     <input
@@ -166,7 +171,6 @@ function Register() {
                       placeholder="Start Year"
                     />
                     
-                    {/* Agar sirf alumni hai tabhi End Year dikhega */}
                     {formData.role === "alumni" && (
                       <input
                         name="endYear"
