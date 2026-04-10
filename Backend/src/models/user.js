@@ -19,7 +19,7 @@ const UserSchema = new mongoose.Schema({
   },
   isApproved: {
     type: Boolean,
-    default: true, // 🔥 Instant approval on registration
+    default: false, // 🔥 CHANGED: Default is false so admin has to approve students/alumni
   },
   
   // Fields coming from the Frontend Register form
@@ -31,7 +31,7 @@ const UserSchema = new mongoose.Schema({
   branch: { type: String },
   rollNumber: { type: String },
 
-  // 🔥 NEW FIELD: Security Question for Password Reset
+  // 🔥 Security Question for Password Reset
   secretAnswer: {
     type: String,
     required: true,
@@ -41,15 +41,15 @@ const UserSchema = new mongoose.Schema({
 }, { timestamps: true }); 
 
 // =================================================================
-// 🔥 2. NAYA CHOWKIDAAR (PRE-SAVE HOOK) JO PASSWORD KO HASH KAREGA
+// 🔥 2. PRE-SAVE HOOK TO HASH THE PASSWORD
 // =================================================================
 UserSchema.pre("save", async function (next) {
-  // Agar password modify nahi hua (jaise profile update mein), toh skip kar do
+  // If password is not modified (like in a profile update), skip
   if (!this.isModified("password")) {
     return next();
   }
 
-  // Agar naya password ban raha hai, toh hash karo
+  // If a new password is being created, hash it
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);

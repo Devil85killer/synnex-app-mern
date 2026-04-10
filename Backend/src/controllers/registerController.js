@@ -5,13 +5,13 @@ const registerController = async (req, res) => {
     const {
       email, password, startYear, endYear,
       degree, branch, rollNumber, firstName,
-      lastName, role, secretAnswer // 🔥 NAYA: secretAnswer yahan extract kiya
+      lastName, role, secretAnswer
     } = req.body;
 
     const userRole = role.toLowerCase();
     console.log("Processing registration for role:", userRole);
 
-    // 1. SECURITY FIX: Admin ko public route se register hone se roko
+    // 1. SECURITY FIX: Block admin registration via public route
     if (userRole === "admin") {
         return res.status(403).json({
             status: "fail",
@@ -28,27 +28,43 @@ const registerController = async (req, res) => {
       });
     }
 
-    // 3. Create the unified User
-    // Ab saara data (Student, Alumni, Teacher) ek hi table me direct save hoga! 🔥
+    // 🔥 3. CUSTOM LOGIC: Handle years and approval based on role
+    let finalStartYear = startYear;
+    let finalEndYear = endYear;
+    let approvalStatus = false; // Default to false so Admin has to approve students/alumni
+
+    if (userRole === "student") {
+      finalEndYear = ""; // Students only need start year
+    } else if (userRole === "teacher") {
+      finalStartYear = ""; // Teachers don't need years
+      finalEndYear = "";
+      approvalStatus = true; // Auto-approve teachers
+    }
+
+    // 4. Create the unified User
     const newUser = await User.create({
       email,
       password,
       role: userRole,
+      isApproved: approvalStatus, // 🔥 NAYA: Dynamic approval status
       firstName,
       lastName,
-      startYear,
-      endYear,
+      startYear: finalStartYear,  // 🔥 NAYA: Saved filtered year
+      endYear: finalEndYear,      // 🔥 NAYA: Saved filtered year
       degree,
       branch,
       rollNumber,
-      // 🔥 NAYA: secretAnswer ko lowercase karke save kar rahe hain taaki case-sensitivity ka issue na aaye
-      secretAnswer: secretAnswer ? secretAnswer.toLowerCase() : "mumbai" 
+      secretAnswer: secretAnswer ? secretAnswer.toLowerCase() : "mumbai"
     });
 
-    // 4. Send Success Response
+    // 5. Send Success Response (Dynamic message based on approval status)
+    const successMessage = approvalStatus 
+        ? `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} registered successfully!`
+        : `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} registered successfully! Please wait for Admin approval.`;
+
     res.status(201).json({
       status: "success",
-      message: `${userRole.charAt(0).toUpperCase() + userRole.slice(1)} registered successfully!`,
+      message: successMessage,
       data: { user: newUser },
     });
 

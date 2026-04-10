@@ -26,7 +26,7 @@ function Register() {
     firstName: "",
     lastName: "",
     role: "",
-    secretAnswer: "", // 🔥 NAYA: Secret answer state mein add kiya
+    secretAnswer: "",
   });
 
   const navigate = useNavigate();
@@ -73,12 +73,13 @@ function Register() {
 
     try {
       const response = await axios.post(
-        "https://synnex-backend.onrender.com/register/user",
+        "https://synnex-backend.onrender.com/register/user", // Yaad rakhna bhai, local testing ke liye isko localhost kar lena agar zaroorat ho
         formData
       );
       
       if (response.data.status === "success" || response.status === 200 || response.status === 201) {
-        toast.success("Registration successful!");
+        // 🔥 Custom toast message directly backend se la sakte hain yahan
+        toast.success(response.data.message || "Registration successful!");
         setTimeout(() => {
           navigate("/login");
         }, 2000);
@@ -124,6 +125,7 @@ function Register() {
             
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-3">
+                
                 <input
                   name="email"
                   type="email"
@@ -132,6 +134,7 @@ function Register() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-black focus:border-black sm:text-sm"
                   placeholder="Email address"
                 />
+                
                 <input
                   name="password"
                   type="password"
@@ -141,24 +144,41 @@ function Register() {
                   placeholder="Password"
                 />
 
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    name="startYear"
-                    type="text"
-                    required
-                    onChange={handleChange}
-                    className="px-3 py-2 border border-gray-300 rounded-md sm:text-sm"
-                    placeholder="Start Year"
-                  />
-                  <input
-                    name="endYear"
-                    type="text"
-                    required
-                    onChange={handleChange}
-                    className="px-3 py-2 border border-gray-300 rounded-md sm:text-sm"
-                    placeholder="End Year"
-                  />
-                </div>
+                {/* 🔥 1. ROLE DROPDOWN MOVED HERE 🔥 */}
+                <Select
+                  options={roleOptions}
+                  value={selectedRole}
+                  onChange={handleRoleChange}
+                  placeholder="Select your role"
+                  className="text-sm text-left"
+                />
+
+                {/* 🔥 2. CONDITIONAL YEAR INPUTS 🔥 */}
+                {/* Agar student ya alumni hai tabhi ye block dikhega */}
+                {(formData.role === "student" || formData.role === "alumni") && (
+                  <div className={`grid ${formData.role === "alumni" ? "grid-cols-2" : "grid-cols-1"} gap-3`}>
+                    <input
+                      name="startYear"
+                      type="text"
+                      required
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md sm:text-sm"
+                      placeholder="Start Year"
+                    />
+                    
+                    {/* Agar sirf alumni hai tabhi End Year dikhega */}
+                    {formData.role === "alumni" && (
+                      <input
+                        name="endYear"
+                        type="text"
+                        required
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md sm:text-sm"
+                        placeholder="End Year"
+                      />
+                    )}
+                  </div>
+                )}
 
                 <Select
                   options={degreeOptions}
@@ -205,7 +225,6 @@ function Register() {
                   />
                 </div>
 
-                {/* 🔥 NAYA: Favorite City wala input field */}
                 <input
                   name="secretAnswer"
                   type="text"
@@ -215,13 +234,6 @@ function Register() {
                   placeholder="Security Q: What is your favorite city?"
                 />
 
-                <Select
-                  options={roleOptions}
-                  value={selectedRole}
-                  onChange={handleRoleChange}
-                  placeholder="Select your role"
-                  className="text-sm text-left"
-                />
               </div>
 
               <div className="pt-4">
