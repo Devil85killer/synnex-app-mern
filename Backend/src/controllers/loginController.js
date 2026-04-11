@@ -1,4 +1,4 @@
-const { User } = require("../models/user");
+const User = require("../models/user"); // 🔥 FIX: Yahan se curly braces hata diye!
 const jwt = require("jsonwebtoken");
 // 🔥 NAYA: bcryptjs import kiya
 const bcrypt = require("bcryptjs");
