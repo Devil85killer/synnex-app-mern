@@ -10,7 +10,7 @@ const newsRoutes = require("./newsRoutes");
 const adminRoute = require("./adminRoute");
 // 🔥 NEW: Import the chat route we just created
 const chatRoute = require("./chatRoute");
-
+const { sendMailController } = require("../controllers/emailController");
 // Ye `/api/` lagne ke baad ab saare routes theek jagah point karenge
 router.use("/register", registerRoute);
 router.use("/events", eventRoutes); 
@@ -21,5 +21,6 @@ router.use("/news", newsRoutes);
 router.use("/admin", adminRoute);
 // 🔥 NEW: Connect the chat route
 router.use("/chat", chatRoute);
-
+// Email Route
+router.post('/send-mail', sendMailController);
 module.exports = router;
