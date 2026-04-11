@@ -188,8 +188,20 @@ function Jobs() {
 
                     {/* 🔥 UPDATE: Dono buttons ko alag kiya aur styling theek ki */}
                     <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                      {/* 🔥 FIX: Smart Apply Now Button (Handles missing https://) */}
                       <button 
-                        onClick={() => window.open(job.applyLink || '#', '_blank')}
+                        onClick={() => {
+                          if (!job.applyLink) {
+                            alert("This job does not have a valid application link attached.");
+                            return;
+                          }
+                          let finalUrl = job.applyLink;
+                          // Check if link has protocol, if not add https://
+                          if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
+                            finalUrl = "https://" + finalUrl;
+                          }
+                          window.open(finalUrl, '_blank');
+                        }}
                         className="flex-1 bg-black text-white font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition shadow-sm text-sm"
                       >
                         Apply Now 🚀

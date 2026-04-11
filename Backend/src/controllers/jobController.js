@@ -15,8 +15,8 @@ const createJobController = async (req, res) => {
       });
     }
 
-    // EXTRACTION: Added all the missing fields coming from your frontend
-    const { title, company, location, type, description } = req.body;
+    // EXTRACTION: 🔥 NAYA: 'applyLink' ko yahan add kar diya
+    const { title, company, location, type, description, applyLink } = req.body;
     
     // SAFE USER ID CHECK
     const createdBy = req.user._id || req.user.id; 
@@ -24,10 +24,11 @@ const createJobController = async (req, res) => {
     // DATABASE SAVE
     const job = await Job.create({
       title,
-      company,      // Added company
-      location,     // Added location
-      type,         // Added job type (Full-time, etc.)
+      company,      
+      location,     
+      type,         
       description,
+      applyLink,    // 🔥 NAYA: Database mein save karne ke liye add kiya
       createdBy,
     });
 
