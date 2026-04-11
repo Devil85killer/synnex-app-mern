@@ -1,13 +1,15 @@
-import React from 'react';
-import { FaShare } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaShare, FaSpinner } from 'react-icons/fa';
 import { getLoggedIn, getUserData } from '../services/authService';
 import { Link, useLocation } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
+import axios from 'axios'; // 🔥 Ye add karna zaroori hai!
 import 'react-toastify/dist/ReactToastify.css';
 
 const SendMail = () => {
   const loggedIn = getLoggedIn();
   const location = useLocation(); 
+  const [loading, setLoading] = useState(false); // 🔥 Button spinner ke liye
   
   // SENDER KI DETAILS
   const userData = getUserData() || {};
@@ -19,18 +21,46 @@ const SendMail = () => {
   const defaultTo = queryParams.get('to') || '';
   const defaultSubject = queryParams.get('subject') || '';
 
-  const handleSendMail = (e) => {
+  // 🔥 UPDATE: Asli API Call!
+  const handleSendMail = async (e) => {
     e.preventDefault();
-    toast.success(`Mail sent! Replies will be directed to your inbox. 🚀`);
+    setLoading(true);
+
+    const formData = new FormData(e.target);
+    const emailData = {
+      to: formData.get('recipient'),
+      subject: formData.get('subject'),
+      message: formData.get('message'),
+      from: senderEmail // Taki reply sender ko aaye
+    };
+
+    try {
+      // Backend ko request bhej rahe hain
+      const res = await axios.post('https://synnex-backend.onrender.com/api/send-mail', emailData, {
+        withCredentials: true
+      });
+
+      if (res.data.status === "success") {
+        toast.success(`Mail sent successfully! 🚀`);
+        e.target.reset(); // Form clear karna
+      } else {
+        toast.error(`Failed to send mail: ${res.data.message}`);
+      }
+    } catch (error) {
+      console.error("Mail Error:", error);
+      toast.error(`Something went wrong. Backend error!`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-50 py-10">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 py-10 w-full">
       <ToastContainer position="top-right" autoClose={4000} />
       
       <div className="flex flex-col items-center justify-center w-full">
         {loggedIn ? (
-          <div className="w-full max-w-lg bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+          <div className="w-full max-w-lg bg-white p-8 rounded-xl shadow-lg border border-gray-200 mx-4">
             <h2 className="text-3xl font-bold mb-6 text-center text-gray-900 border-b pb-4">
               Send Direct Mail 📧
             </h2>
@@ -91,13 +121,18 @@ const SendMail = () => {
                   />
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit Button with Loading State */}
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full flex justify-center items-center py-3 px-4 border border-transparent text-md font-bold rounded-md text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition shadow-md"
+                    disabled={loading}
+                    className={`w-full flex justify-center items-center py-3 px-4 border border-transparent text-md font-bold rounded-md text-white transition shadow-md ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black'}`}
                   >
-                    Send Mail <FaShare className="ml-2" />
+                    {loading ? (
+                       <><FaSpinner className="animate-spin mr-2" /> Sending...</>
+                    ) : (
+                       <>Send Mail <FaShare className="ml-2" /></>
+                    )}
                   </button>
                 </div>
               </div>
