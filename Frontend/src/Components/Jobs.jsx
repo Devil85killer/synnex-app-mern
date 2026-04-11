@@ -14,12 +14,14 @@ function Jobs() {
 
   const [jobs, setJobs] = useState([]);
 
+  // 🔥 UPDATE: applyLink add kiya state mein
   const [newJob, setNewJob] = useState({
     title: "",
     company: "",
     location: "",
     type: "",
-    description: ""
+    description: "",
+    applyLink: "" 
   });
 
   // 1. SMART FETCH LOGIC (Normal + Fallback to Admin Route)
@@ -47,7 +49,7 @@ function Jobs() {
            const adminRes = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs');
            setJobs(adminRes.data);
         } catch(e) {
-            console.error("Fallback also failed.");
+             console.error("Fallback also failed.");
         }
       }
     };
@@ -71,7 +73,8 @@ function Jobs() {
       }
       
       setShowForm(false);
-      setNewJob({ title: "", company: "", location: "", type: "", description: "" }); 
+      // 🔥 UPDATE: form reset karte waqt applyLink bhi reset kiya
+      setNewJob({ title: "", company: "", location: "", type: "", description: "", applyLink: "" }); 
       alert("Job Posted Successfully! ✅");
     } catch (error) {
       console.error("Error creating job:", error);
@@ -133,6 +136,9 @@ function Jobs() {
                   <option value="Internship">Internship</option>
                 </select>
                 
+                {/* 🔥 NAYA: Apply Link Input Field */}
+                <input type="url" required value={newJob.applyLink} onChange={(e) => setNewJob({...newJob, applyLink: e.target.value})} placeholder="Application Link / URL (e.g., https://...)" className="border border-gray-300 p-2 rounded md:col-span-2 focus:outline-none focus:ring-2 focus:ring-black" />
+
                 <textarea required value={newJob.description} onChange={(e) => setNewJob({...newJob, description: e.target.value})} placeholder="Job Description & Requirements..." className="border border-gray-300 p-2 rounded md:col-span-2 focus:outline-none focus:ring-2 focus:ring-black" rows="3"></textarea>
                 
                 <button type="submit" className="bg-green-600 text-white font-bold px-4 py-2 rounded hover:bg-green-700 md:col-span-2 transition shadow-sm">
@@ -180,12 +186,23 @@ function Jobs() {
                       </p>
                     </div>
 
-                    <button 
-                      onClick={() => navigate(`/send-mail?to=${encodeURIComponent(job.createdBy?.email || "admin@example.com")}&subject=${encodeURIComponent(`Job Application: ${job.title} at ${job.company}`)}`)}
-                      className="block w-full text-center border-2 border-black text-black font-bold px-4 py-2 rounded-lg hover:bg-black hover:text-white transition shadow-sm"
-                    >
-                      Contact / Apply Now
-                    </button>
+                    {/* 🔥 UPDATE: Dono buttons ko alag kiya aur styling theek ki */}
+                    <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                      <button 
+                        onClick={() => window.open(job.applyLink || '#', '_blank')}
+                        className="flex-1 bg-black text-white font-bold px-4 py-2 rounded-lg hover:bg-gray-800 transition shadow-sm text-sm"
+                      >
+                        Apply Now 🚀
+                      </button>
+                      
+                      <button 
+                        onClick={() => navigate(`/send-mail?to=${encodeURIComponent(job.createdBy?.email || "admin@example.com")}&subject=${encodeURIComponent(`Job Application: ${job.title} at ${job.company}`)}`)}
+                        className="flex-1 bg-white text-gray-800 border-2 border-gray-200 font-bold px-4 py-2 rounded-lg hover:bg-gray-50 transition shadow-sm text-sm"
+                      >
+                        Contact HR 📧
+                      </button>
+                    </div>
+
                   </div>
 
                 </div>
