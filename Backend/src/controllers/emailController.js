@@ -2,13 +2,22 @@ const nodemailer = require("nodemailer");
 
 const sendMailController = async (req, res) => {
   try {
-    // Frontend se data nikal rahe hain
     const { to, subject, message, from } = req.body;
 
-    // 1. Postman (Transporter) Setup with Brevo
+    // 🔥 SECURITY CHECK: Kya Render ko passwords mil rahe hain?
+    if (!process.env.BREVO_SMTP_USER || !process.env.BREVO_SMTP_PASS) {
+        console.log("🚨 ALARM: Render Environment variables missing!");
+        return res.status(500).json({ 
+            status: "error", 
+            message: "SMTP Credentials missing in backend.",
+            errorDetails: "BREVO_SMTP_USER is undefined" 
+        });
+    }
+
+    // 1. Postman Setup
     const transporter = nodemailer.createTransport({
       host: "smtp-relay.brevo.com",
-      port: 587,
+      port: 587, // Agar ye na chale aglee baar, toh hum isko 2525 kar denge
       secure: false, 
       auth: {
         user: process.env.BREVO_SMTP_USER, 
@@ -16,11 +25,10 @@ const sendMailController = async (req, res) => {
       },
     });
 
-    // 2. Email ka format tayyar karna
+    // 2. Email Format
     const mailOptions = {
-      // 🔥 DHYAN RAKHNA: 'from' mein WAHI email dalna jo Brevo mein Verified Sender hai!
       from: `"Synnex Portal" <${process.env.BREVO_SMTP_USER}>`, 
-      replyTo: from, // Jiska account hai, reply usko jayega
+      replyTo: from, 
       to: to,
       subject: subject,
       text: message,
@@ -38,12 +46,17 @@ const sendMailController = async (req, res) => {
 
     // 3. Email bhej do
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully! Message ID: ", info.messageId);
+    console.log("✅ Email sent successfully! Message ID: ", info.messageId);
 
     res.status(200).json({ status: "success", message: "Email sent successfully!" });
   } catch (error) {
-    console.error("Error sending email:", error);
-    res.status(500).json({ status: "error", message: "Failed to send email." });
+    console.error("🔥 Error sending email:", error);
+    // 🔥 NAYA: Ab error ka asli reason frontend network tab mein dikhega!
+    res.status(500).json({ 
+        status: "error", 
+        message: "Failed to send email.", 
+        errorDetails: error.message // Ye line humein sachai batayegi
+    });
   }
 };
 
