@@ -3,9 +3,8 @@ import { getUserData, getLoggedIn } from "../services/authService";
 
 function Home() {
   const loggedin = getLoggedIn();
-  const navigate = useNavigate(); // <-- BUTTONS KO ZINDA KARNE WALA HOOK YAHAN HAI
+  const navigate = useNavigate();
 
-  // FIXED: Navigation ko proper early return bana diya taaki bina login koi yahan na aa sake
   if (!loggedin) {
     return <Navigate to="/login" />;
   }
@@ -33,7 +32,7 @@ function Home() {
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
-          {/* Profile Card (Live Data from Backend) */}
+          {/* Profile Card */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">My Profile</h2>
             <div className="space-y-3">
@@ -50,7 +49,6 @@ function Home() {
                 <p className="font-semibold text-blue-600 capitalize">{role}</p>
               </div>
             </div>
-            {/* FIXED: Edit Profile Button */}
             <button 
               onClick={() => navigate('/profile')}
               className="mt-5 w-full bg-gray-100 text-black border border-gray-300 py-2 rounded-lg hover:bg-black hover:text-white transition font-medium"
@@ -75,22 +73,18 @@ function Home() {
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <h2 className="text-xl font-bold border-b pb-3 mb-4 text-gray-800">Quick Actions</h2>
             <div className="space-y-3">
-              {/* FIXED: Saare buttons mein onClick add kar diya hai */}
               <button 
                 onClick={() => navigate('/jobs')} 
                 className="block w-full text-center bg-black text-white py-2 rounded-lg hover:bg-gray-800 transition shadow-sm"
               >
                 Explore Jobs
               </button>
-              <button 
-                onClick={() => navigate('/search-people')} 
-                className="block w-full text-center bg-white text-black border-2 border-black py-2 rounded-lg hover:bg-gray-50 transition shadow-sm"
-              >
-                Find Alumni
-              </button>
+              
+              {/* 🔥 FIND ALUMNI BUTTON YAHAN SE HATA DIYA GAYA HAI 🔥 */}
+
               <button 
                 onClick={() => navigate('/events')} 
-                className="block w-full text-center bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm"
+                className="block w-full text-center bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm font-medium"
               >
                 Upcoming Events
               </button>
