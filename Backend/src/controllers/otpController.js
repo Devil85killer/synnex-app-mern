@@ -16,9 +16,11 @@ const sendOTP = async (req, res) => {
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp: generatedOtp });
 
-    // 3. Nodemailer Setup
+    // 🔥 3. Nodemailer Setup (UPDATED FOR RENDER STABILITY)
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // Use SSL for port 465
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -34,13 +36,18 @@ const sendOTP = async (req, res) => {
              <p>This OTP is valid for 5 minutes.</p>`,
     };
 
+    // Send the email
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ success: true, message: "OTP sent successfully!" });
 
   } catch (error) {
-    console.error("OTP Send Error:", error);
-    res.status(500).json({ message: "Failed to send OTP. Check your email config." });
+    // 🔥 ASLI ERROR CONSOLE AUR FRONTEND MEIN BHEJO
+    console.error("OTP Send Error Detail:", error);
+    res.status(500).json({ 
+      message: "Failed to send OTP.", 
+      errorDetail: error.message // Ab frontend pe pata chalega exact error kya hai
+    });
   }
 };
 
