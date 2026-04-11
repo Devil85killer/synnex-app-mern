@@ -11,28 +11,19 @@ const sendOTP = async (req, res) => {
     }
 
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    console.log("👉 STEP 2: OTP Generated:", generatedOtp);
 
-    // Database operations
-    console.log("👉 STEP 3: Connecting to DB to delete old OTP...");
+    // Database operations (Ab ye perfectly chalega)
     await OTP.deleteMany({ email });
-    console.log("👉 STEP 4: Old OTPs deleted. Saving new OTP...");
     await OTP.create({ email, otp: generatedOtp });
-    console.log("👉 STEP 5: New OTP saved in DB successfully.");
+    console.log("👉 STEP 2: DB work done. Sending email...");
 
-    // Nodemailer
-    console.log("👉 STEP 6: Setting up Nodemailer with Port 587...");
-    // 🔥 YAHAN PORT AUR SECURE SETTINGS CHANGE KI HAIN
+    // 🔥 WAPAS PURANA AUR SABSE STABLE TARIQA (No custom ports)
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,          
-      secure: false,      
-      requireTLS: true,   
+      service: "gmail", 
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      connectionTimeout: 10000, 
     });
 
     const mailOptions = {
@@ -44,9 +35,8 @@ const sendOTP = async (req, res) => {
              <p>This OTP is valid for 5 minutes.</p>`,
     };
 
-    console.log("👉 STEP 7: Sending email over network...");
     await transporter.sendMail(mailOptions);
-    console.log("👉 STEP 8: Email sent successfully!");
+    console.log("👉 STEP 3: Email sent successfully!");
 
     res.status(200).json({ success: true, message: "OTP sent successfully!" });
 
