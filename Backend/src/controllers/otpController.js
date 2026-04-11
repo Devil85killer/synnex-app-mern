@@ -1,4 +1,4 @@
-const { OTP } = require("../models/otpModel");
+const OTP = require("../models/otpModel"); // 🔥 Yahan se curly braces {} hata diye
 const nodemailer = require("nodemailer");
 
 const sendOTP = async (req, res) => {
@@ -12,15 +12,15 @@ const sendOTP = async (req, res) => {
     // 1. Generate 4-digit random OTP
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // 2. Save to Database (Pehle purane OTPs hata do is email ke)
-    await OTP.deleteMany({ email });
+    // 2. Save to Database
+    await OTP.deleteMany({ email }); // Ab ye error nahi dega!
     await OTP.create({ email, otp: generatedOtp });
 
-    // 🔥 3. Nodemailer Setup (UPDATED FOR RENDER STABILITY)
+    // 3. Nodemailer Setup
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // Use SSL for port 465
+      secure: true, 
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -36,17 +36,15 @@ const sendOTP = async (req, res) => {
              <p>This OTP is valid for 5 minutes.</p>`,
     };
 
-    // Send the email
     await transporter.sendMail(mailOptions);
 
     res.status(200).json({ success: true, message: "OTP sent successfully!" });
 
   } catch (error) {
-    // 🔥 ASLI ERROR CONSOLE AUR FRONTEND MEIN BHEJO
     console.error("OTP Send Error Detail:", error);
     res.status(500).json({ 
       message: "Failed to send OTP.", 
-      errorDetail: error.message // Ab frontend pe pata chalega exact error kya hai
+      errorDetail: error.message 
     });
   }
 };
