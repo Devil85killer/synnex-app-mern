@@ -12,18 +12,24 @@ const sendOTP = async (req, res) => {
 
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Database operations (Ab ye perfectly chalega)
+    // Database operations 
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp: generatedOtp });
     console.log("👉 STEP 2: DB work done. Sending email...");
 
-    // 🔥 WAPAS PURANA AUR SABSE STABLE TARIQA (No custom ports)
+    // 🔥 THE ULTIMATE FIX FOR RENDER NETWORK HANG
     const transporter = nodemailer.createTransport({
-      service: "gmail", 
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // 587 ke liye false hota hai
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      tls: {
+        rejectUnauthorized: false // 🔥 YE LINE RENDER KE STRICT SSL CHECK KO BYPASS KAREGI
+      },
+      connectionTimeout: 10000, // 10 sec mein atka toh bata dega
     });
 
     const mailOptions = {
