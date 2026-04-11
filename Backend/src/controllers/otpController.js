@@ -1,9 +1,4 @@
 const OTP = require("../models/otpModel"); 
-const nodemailer = require("nodemailer");
-const dns = require("dns");
-
-// 🔥 IPv6 Bypass: Force Node.js to use IPv4 so Render doesn't throw ENETUNREACH
-dns.setDefaultResultOrder("ipv4first");
 
 const sendOTP = async (req, res) => {
   try {
@@ -14,52 +9,28 @@ const sendOTP = async (req, res) => {
       return res.status(400).json({ message: "Email is required" });
     }
 
+    // 1. Generate 4-digit random OTP
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Database operations
+    // 2. Database operations (Ye ekdum sahi chal raha hai)
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp: generatedOtp });
     console.log("👉 STEP 2: DB work done. OTP saved in database.");
 
-    console.log("👉 STEP 3: Setting up Nodemailer...");
-    
-    // 🔥 BULLETPROOF NODEMAILER CONFIG
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true, 
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      // 🔥 TIMEOUTS: Taaki infinite pending me na atke
-      connectionTimeout: 10000, 
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-      // 🔥 DEBUGGING: Ab logs me exactly dikhega Gmail kya bol raha hai
-      logger: true,
-      debug: true
+    // 3. RENDER BLOCK BYPASS (Demo Mode)
+    console.log("👉 STEP 3: Skipping Email dispatch. Sending OTP directly to frontend for Demo.");
+
+    // 🔥 Dhyan de: Yahan response mein 'demoOtp' bhej rahe hain
+    res.status(200).json({ 
+      success: true, 
+      message: "OTP generated successfully! (Check your Network tab/Console)",
+      demoOtp: generatedOtp 
     });
-
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Synnex - Registration OTP",
-      html: `<h3>Welcome to Synnex!</h3>
-             <p>Your OTP for registration is: <b style="font-size:24px; color:blue;">${generatedOtp}</b></p>
-             <p>This OTP is valid for 5 minutes.</p>`,
-    };
-
-    console.log("👉 STEP 4: Handshaking with Gmail SMTP...");
-    await transporter.sendMail(mailOptions);
-    console.log("👉 STEP 5: Email sent successfully!");
-
-    res.status(200).json({ success: true, message: "OTP sent successfully!" });
 
   } catch (error) {
     console.error("❌ OTP Send Error Detail:", error.message);
     res.status(500).json({ 
-      message: "Failed to send OTP.", 
+      message: "Failed to process OTP.", 
       errorDetail: error.message 
     });
   }
