@@ -9,18 +9,18 @@ const Meeting = () => {
   const loggedIn = getLoggedIn();
   const user = getUserData() || {}; 
   
-  // 🔥 Admin aur Alumni DONO check honge
+  // 🔥 Admin aur Alumni DONO ko link paste karne ka power milega
   const userRole = user?.role?.toLowerCase();
   const canGenerateLink = userRole === 'alumni' || userRole === 'admin';
   
   const [meetingLink, setMeetingLink] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Page load hote hi backend se current link layega
   useEffect(() => {
     const fetchMeetingLink = async () => {
       try {
         const response = await axios.get('https://synnex-backend.onrender.com/api/meeting');
-        
         if (response.data.status === 'success' && response.data.link) {
           setMeetingLink(response.data.link);
         }
@@ -28,40 +28,29 @@ const Meeting = () => {
         console.log("No active meeting found on server.");
       }
     };
-
-    if (loggedIn) {
-      fetchMeetingLink();
-    }
+    if (loggedIn) fetchMeetingLink();
   }, [loggedIn]);
 
+  // Input box mein typing/pasting handle karega
   const handleManualLinkChange = (e) => {
     setMeetingLink(e.target.value);
   };
 
-  const handleGenerateMeetingLink = async () => {
+  // Broadcast button dabane par ye chalega
+  const handleSaveMeetingLink = async () => {
+    // 🔥 STRICT CHECK: Asli link hona hi chahiye!
+    if (!meetingLink || !meetingLink.startsWith('http')) {
+      toast.error("⚠️ Error: Please copy and paste a REAL Google Meet link!");
+      return;
+    }
+
     setLoading(true);
-    
-    // 🔥 NAYA: Ekdum asli dikhne wala Google Meet format (xxx-xxxx-xxx) banayega
-    const generateFakeGMeet = () => {
-      const p1 = Math.random().toString(36).substring(2, 5);
-      const p2 = Math.random().toString(36).substring(2, 6);
-      const p3 = Math.random().toString(36).substring(2, 5);
-      return `https://meet.google.com/${p1}-${p2}-${p3}`;
-    };
-    
-    // Agar input box me pehle se kuch hai toh wahi use karega, warna naya banayega
-    const newMeetingLink = meetingLink.trim() !== '' && meetingLink.includes('http') 
-                           ? meetingLink 
-                           : generateFakeGMeet();
-    
     try {
       await axios.post('https://synnex-backend.onrender.com/api/meeting', {
-        link: newMeetingLink,
+        link: meetingLink,
         role: userRole
       });
-      
-      setMeetingLink(newMeetingLink);
-      toast.success("Google Meet link Generated & Saved! 🚀");
+      toast.success("Google Meet link Broadcasted to Everyone! 🚀");
     } catch (error) {
       console.error("Error saving meeting:", error);
       toast.error("Database Error: Failed to save link.");
@@ -69,6 +58,7 @@ const Meeting = () => {
     setLoading(false);
   };
 
+  // Join button dabane par naye tab me meeting khulegi
   const handleJoinMeeting = () => {
     if (meetingLink) {
       toast.info("Opening Meeting Room..."); 
@@ -87,14 +77,14 @@ const Meeting = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Alumni Meeting Room 🎥</h2>
               <p className="text-gray-500">
                 {canGenerateLink 
-                  ? "Click Generate to create a Google Meet link instantly." 
+                  ? "Paste your real Google Meet link below to broadcast it." 
                   : "Active meeting link shared by the Alumni/Admin is below."}
               </p>
             </div>
 
             <div className="mb-6">
               <label htmlFor="meetingLink" className="block text-sm font-semibold text-gray-700 mb-2">
-                {canGenerateLink ? "Generated Meeting Link" : "Active Meeting Link"}
+                {canGenerateLink ? "Your Secure Meeting Link" : "Active Meeting Link"}
               </label>
               <input
                 id="meetingLink"
@@ -102,7 +92,7 @@ const Meeting = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
                 value={meetingLink}
                 onChange={handleManualLinkChange}
-                placeholder={canGenerateLink ? "Click 'Generate Link' below..." : "Waiting for meeting to start..."}
+                placeholder={canGenerateLink ? "Paste real link here (https://meet.google.com/...)" : "Waiting for meeting to start..."}
                 readOnly={!canGenerateLink} 
               />
             </div>
@@ -111,10 +101,10 @@ const Meeting = () => {
               {canGenerateLink && (
                 <button
                   className="flex-1 border-2 border-black text-black hover:bg-black hover:text-white px-4 py-3 rounded-lg font-bold transition duration-300 disabled:opacity-50"
-                  onClick={handleGenerateMeetingLink}
+                  onClick={handleSaveMeetingLink}
                   disabled={loading}
                 >
-                  {loading ? "Generating..." : "Generate Link"}
+                  {loading ? "Broadcasting..." : "1. Broadcast Link"}
                 </button>
               )}
               <button
@@ -126,7 +116,7 @@ const Meeting = () => {
                 onClick={handleJoinMeeting}
                 disabled={!meetingLink}
               >
-                Join Meeting
+                {canGenerateLink ? '2. Join Meeting' : 'Join Meeting'}
               </button>
             </div>
           </div>
