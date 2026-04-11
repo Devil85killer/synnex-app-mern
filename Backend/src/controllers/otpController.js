@@ -1,9 +1,8 @@
 const OTP = require("../models/otpModel"); 
 const nodemailer = require("nodemailer");
-const dns = require("dns"); // 🔥 NAYA: DNS module import kiya
+const dns = require("dns");
 
-// 🔥 MAGIC WAND: Ye line Node.js ko force karegi IPv4 use karne ke liye, 
-// jisse Render ka IPv6 block bypass ho jayega!
+// 🔥 IPv6 Bypass: Force Node.js to use IPv4 so Render doesn't throw ENETUNREACH
 dns.setDefaultResultOrder("ipv4first");
 
 const sendOTP = async (req, res) => {
@@ -17,12 +16,14 @@ const sendOTP = async (req, res) => {
 
     const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // Database operations 
+    // Database operations
     await OTP.deleteMany({ email });
     await OTP.create({ email, otp: generatedOtp });
-    console.log("👉 STEP 2: DB work done. Sending email...");
+    console.log("👉 STEP 2: DB work done. OTP saved in database.");
 
-    // Setup Nodemailer with standard secure port 465
+    console.log("👉 STEP 3: Setting up Nodemailer...");
+    
+    // 🔥 BULLETPROOF NODEMAILER CONFIG
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -31,6 +32,13 @@ const sendOTP = async (req, res) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+      // 🔥 TIMEOUTS: Taaki infinite pending me na atke
+      connectionTimeout: 10000, 
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+      // 🔥 DEBUGGING: Ab logs me exactly dikhega Gmail kya bol raha hai
+      logger: true,
+      debug: true
     });
 
     const mailOptions = {
@@ -42,14 +50,14 @@ const sendOTP = async (req, res) => {
              <p>This OTP is valid for 5 minutes.</p>`,
     };
 
-    console.log("👉 STEP 3: Connecting to Gmail (IPv4)...");
+    console.log("👉 STEP 4: Handshaking with Gmail SMTP...");
     await transporter.sendMail(mailOptions);
-    console.log("👉 STEP 4: Email sent successfully!");
+    console.log("👉 STEP 5: Email sent successfully!");
 
     res.status(200).json({ success: true, message: "OTP sent successfully!" });
 
   } catch (error) {
-    console.error("❌ OTP Send Error Detail:", error);
+    console.error("❌ OTP Send Error Detail:", error.message);
     res.status(500).json({ 
       message: "Failed to send OTP.", 
       errorDetail: error.message 
