@@ -210,7 +210,7 @@ function AdminDashboard() {
                     <th className="p-4 font-bold">Name</th>
                     <th className="p-4 font-bold">Email</th>
                     <th className="p-4 font-bold">Role</th>
-                    <th className="p-4 font-bold">Status</th> {/* 🔥 NAYA: Status Header */}
+                    <th className="p-4 font-bold">Status</th> 
                     <th className="p-4 font-bold text-center">Action</th>
                   </tr>
                 </thead>
@@ -221,9 +221,9 @@ function AdminDashboard() {
                       <td className="p-4">{user.email}</td>
                       <td className="p-4 capitalize font-medium">{user.role}</td>
                       
-                      {/* 🔥 NAYA: Approval Badge */}
+                      {/* 🔥 FIX: Approval Badge Logic made strict */}
                       <td className="p-4">
-                        {user.isApproved ? (
+                        {user.isApproved === true ? (
                           <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200">Approved</span>
                         ) : (
                           <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200 animate-pulse">Pending</span>
@@ -231,8 +231,8 @@ function AdminDashboard() {
                       </td>
 
                       <td className="p-4 text-center space-x-2 flex justify-center">
-                        {/* 🔥 NAYA: Approve Button - sirf pending users ke liye dikhega */}
-                        {!user.isApproved && (
+                        {/* 🔥 FIX: Approve Button Logic made foolproof */}
+                        {user.isApproved !== true && (
                           <button onClick={() => handleApproveUser(user._id, user.firstName)} className="text-green-600 hover:text-green-800 font-bold text-sm bg-green-50 px-3 py-1 rounded transition hover:bg-green-100 border border-green-200 mr-2">
                             Approve
                           </button>
