@@ -1,5 +1,5 @@
-const { User } = require("../models/user");
-const { OTP } = require("../models/otpModel"); // 🔥 NAYA: OTP model import kiya
+const  User  = require("../models/user");
+const  OTP  = require("../models/otpModel"); // 🔥 NAYA: OTP model import kiya
 
 const registerController = async (req, res) => {
   try {
