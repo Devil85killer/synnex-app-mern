@@ -40,8 +40,27 @@ function AdminDashboard() {
     }
   }, [loggedIn, userRole, navigate]);
 
-  // APIs Functions
-  const fetchUsers = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); setUsers(res.data); } catch (err) {} };
+  // 🔥 API Functions - FIX APPLIED HERE 🔥
+  const fetchUsers = async () => { 
+    try { 
+      const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); 
+      console.log("Users API Response:", res.data); // Network tab mein response dekhne ke liye
+      
+      // Bulletproof logic to extract array regardless of backend structure
+      if (res.data && res.data.data && Array.isArray(res.data.data.users)) {
+        setUsers(res.data.data.users);
+      } else if (res.data && Array.isArray(res.data.users)) {
+        setUsers(res.data.users);
+      } else if (Array.isArray(res.data)) {
+        setUsers(res.data);
+      } else {
+        setUsers([]); // Agar kuch na mile toh table khali rakho, crash mat karo
+      }
+    } catch (err) { 
+      console.error("Failed to fetch users", err);
+    } 
+  };
+  
   const fetchJobs = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {} };
   const fetchEvents = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {} };
   const fetchNews = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {} };
@@ -70,6 +89,19 @@ function AdminDashboard() {
         await axios.put(`https://synnex-backend.onrender.com/api/admin/reset-password/${userId}`, {}, { withCredentials: true });
         alert(`Success! Password for ${userName} is now 'synnex123'.`);
       } catch (error) { alert("Failed to reset password."); }
+    }
+  };
+
+  const handleApproveUser = async (userId, userName) => {
+    if (window.confirm(`Are you sure you want to approve ${userName} to access the platform?`)) {
+      try {
+        await axios.put(`https://synnex-backend.onrender.com/api/admin/user/${userId}/approve`, {}, { withCredentials: true });
+        // Update UI instantly
+        setUsers(users.map(u => u._id === userId ? { ...u, isApproved: true } : u));
+        alert(`${userName} has been successfully approved!`);
+      } catch (error) { 
+        alert("Failed to approve user."); 
+      }
     }
   };
 
@@ -191,17 +223,49 @@ function AdminDashboard() {
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
-                <thead><tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200"><th className="p-4 font-bold">Name</th><th className="p-4 font-bold">Email</th><th className="p-4 font-bold">Role</th><th className="p-4 font-bold text-center">Action</th></tr></thead>
+                <thead>
+                  <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                    <th className="p-4 font-bold">Name</th>
+                    <th className="p-4 font-bold">Email</th>
+                    <th className="p-4 font-bold">Role</th>
+                    <th className="p-4 font-bold">Status</th> 
+                    <th className="p-4 font-bold text-center">Action</th>
+                  </tr>
+                </thead>
                 <tbody className="text-gray-700">
-                  {users.map((user) => (
-                    <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                      <td className="p-4 font-medium text-gray-900">{user.firstName} {user.lastName}</td><td className="p-4">{user.email}</td><td className="p-4 capitalize font-medium">{user.role}</td>
-                      <td className="p-4 text-center space-x-2">
-                        <button onClick={() => handleResetPassword(user._id, user.firstName)} className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 px-3 py-1 rounded transition hover:bg-blue-100">Reset Pass</button>
-                        <button onClick={() => handleDeleteUser(user._id, user.firstName)} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded transition hover:bg-red-100">Delete</button>
+                  {users.length > 0 ? (
+                    users.map((user) => (
+                      <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition">
+                        <td className="p-4 font-medium text-gray-900">{user.firstName} {user.lastName}</td>
+                        <td className="p-4">{user.email}</td>
+                        <td className="p-4 capitalize font-medium">{user.role}</td>
+                        
+                        <td className="p-4">
+                          {user.isApproved === true ? (
+                            <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold border border-green-200">Approved</span>
+                          ) : (
+                            <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold border border-orange-200 animate-pulse">Pending</span>
+                          )}
+                        </td>
+
+                        <td className="p-4 text-center space-x-2 flex justify-center">
+                          {user.isApproved !== true && (
+                            <button onClick={() => handleApproveUser(user._id, user.firstName)} className="text-green-600 hover:text-green-800 font-bold text-sm bg-green-50 px-3 py-1 rounded transition hover:bg-green-100 border border-green-200 mr-2">
+                              Approve
+                            </button>
+                          )}
+                          <button onClick={() => handleResetPassword(user._id, user.firstName)} className="text-blue-600 hover:text-blue-800 font-bold text-sm bg-blue-50 px-3 py-1 rounded transition hover:bg-blue-100 border border-blue-200 mr-2">Reset Pass</button>
+                          <button onClick={() => handleDeleteUser(user._id, user.firstName)} className="text-red-500 hover:text-red-700 font-bold text-sm bg-red-50 px-3 py-1 rounded transition hover:bg-red-100 border border-red-200">Delete</button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="p-10 text-center text-gray-500 font-medium">
+                        No users found in the database.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
