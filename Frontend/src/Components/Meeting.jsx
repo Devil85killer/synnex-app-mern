@@ -8,12 +8,14 @@ import axios from 'axios';
 const Meeting = () => { 
   const loggedIn = getLoggedIn();
   const user = getUserData() || {}; 
-  const isAlumni = user?.role?.toLowerCase() === 'alumni';
+  
+  // 🔥 FIX: Ab Admin aur Alumni DONO check honge!
+  const userRole = user?.role?.toLowerCase();
+  const canGenerateLink = userRole === 'alumni' || userRole === 'admin';
   
   const [meetingLink, setMeetingLink] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // 🔥 PORT 4000 FIX KIYA
   useEffect(() => {
     const fetchMeetingLink = async () => {
       try {
@@ -32,16 +34,23 @@ const Meeting = () => {
     }
   }, [loggedIn]);
 
+  // 🔥 NAYA: Agar tu manually apna koi asli link paste karna chahe
+  const handleManualLinkChange = (e) => {
+    setMeetingLink(e.target.value);
+  };
+
   const handleGenerateMeetingLink = async () => {
     setLoading(true);
-    const uniqueRoomCode = Math.random().toString(36).substring(2, 10);
-    const newMeetingLink = `https://meet.google.com/${uniqueRoomCode}`;
+    
+    // Agar dabba khali hai, toh random generate karo. Agar tune link type kiya hai, toh wahi use karo!
+    const newMeetingLink = meetingLink.trim() !== '' && meetingLink.includes('http') 
+                           ? meetingLink 
+                           : `https://meet.google.com/${Math.random().toString(36).substring(2, 10)}`;
     
     try {
-      // 🔥 PORT 4000 FIX KIYA
       await axios.post('https://synnex-backend.onrender.com/api/meeting', {
         link: newMeetingLink,
-        role: user.role
+        role: userRole
       });
       
       setMeetingLink(newMeetingLink);
@@ -70,34 +79,36 @@ const Meeting = () => {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Alumni Meeting Room 🎥</h2>
               <p className="text-gray-500">
-                {isAlumni 
-                  ? "Generate a secure link and start your meeting instantly." 
-                  : "Active meeting link shared by the Alumni is below."}
+                {canGenerateLink 
+                  ? "Generate or paste a secure link and start your meeting." 
+                  : "Active meeting link shared by the Alumni/Admin is below."}
               </p>
             </div>
 
             <div className="mb-6">
               <label htmlFor="meetingLink" className="block text-sm font-semibold text-gray-700 mb-2">
-                {isAlumni ? "Your Secure Meeting Link" : "Active Meeting Link"}
+                {canGenerateLink ? "Your Secure Meeting Link" : "Active Meeting Link"}
               </label>
+              {/* 🔥 FIX: Ab input box ko readOnly se hata diya gaya hai taaki tu link edit/paste kar sake */}
               <input
                 id="meetingLink"
                 type="text"
                 className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
                 value={meetingLink}
-                placeholder={isAlumni ? "Click generate to create room..." : "Waiting for Alumni to start a meeting..."}
-                readOnly 
+                onChange={handleManualLinkChange}
+                placeholder={canGenerateLink ? "Paste real link or click generate..." : "Waiting for meeting to start..."}
+                readOnly={!canGenerateLink} 
               />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
-              {isAlumni && (
+              {canGenerateLink && (
                 <button
                   className="flex-1 border-2 border-black text-black hover:bg-black hover:text-white px-4 py-3 rounded-lg font-bold transition duration-300 disabled:opacity-50"
                   onClick={handleGenerateMeetingLink}
                   disabled={loading}
                 >
-                  {loading ? "Saving..." : "1. Generate Link"}
+                  {loading ? "Saving..." : (meetingLink ? "1. Broadcast Link" : "1. Generate Link")}
                 </button>
               )}
               <button
@@ -109,7 +120,7 @@ const Meeting = () => {
                 onClick={handleJoinMeeting}
                 disabled={!meetingLink}
               >
-                {isAlumni ? '2. Join Meeting' : 'Join Meeting'}
+                {canGenerateLink ? '2. Join Meeting' : 'Join Meeting'}
               </button>
             </div>
           </div>
