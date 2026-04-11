@@ -1,5 +1,10 @@
 const OTP = require("../models/otpModel"); 
 const nodemailer = require("nodemailer");
+const dns = require("dns"); // 🔥 NAYA: DNS module import kiya
+
+// 🔥 MAGIC WAND: Ye line Node.js ko force karegi IPv4 use karne ke liye, 
+// jisse Render ka IPv6 block bypass ho jayega!
+dns.setDefaultResultOrder("ipv4first");
 
 const sendOTP = async (req, res) => {
   try {
@@ -17,19 +22,15 @@ const sendOTP = async (req, res) => {
     await OTP.create({ email, otp: generatedOtp });
     console.log("👉 STEP 2: DB work done. Sending email...");
 
-    // 🔥 THE ULTIMATE FIX FOR RENDER NETWORK HANG
+    // Setup Nodemailer with standard secure port 465
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // 587 ke liye false hota hai
+      port: 465,
+      secure: true, 
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      tls: {
-        rejectUnauthorized: false // 🔥 YE LINE RENDER KE STRICT SSL CHECK KO BYPASS KAREGI
-      },
-      connectionTimeout: 10000, // 10 sec mein atka toh bata dega
     });
 
     const mailOptions = {
@@ -41,8 +42,9 @@ const sendOTP = async (req, res) => {
              <p>This OTP is valid for 5 minutes.</p>`,
     };
 
+    console.log("👉 STEP 3: Connecting to Gmail (IPv4)...");
     await transporter.sendMail(mailOptions);
-    console.log("👉 STEP 3: Email sent successfully!");
+    console.log("👉 STEP 4: Email sent successfully!");
 
     res.status(200).json({ success: true, message: "OTP sent successfully!" });
 
