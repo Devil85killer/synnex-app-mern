@@ -21,16 +21,17 @@ const sendOTP = async (req, res) => {
     console.log("👉 STEP 5: New OTP saved in DB successfully.");
 
     // Nodemailer
-    console.log("👉 STEP 6: Setting up Nodemailer...");
+    console.log("👉 STEP 6: Setting up Nodemailer with Port 587...");
+    // 🔥 YAHAN PORT AUR SECURE SETTINGS CHANGE KI HAIN
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 465,
-      secure: true, 
+      port: 587,          
+      secure: false,      
+      requireTLS: true,   
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-      // 🔥 NAYA: Connection timeout add kiya hai taaki atke nahi
       connectionTimeout: 10000, 
     });
 
