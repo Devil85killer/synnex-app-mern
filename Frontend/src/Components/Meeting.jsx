@@ -9,7 +9,7 @@ const Meeting = () => {
   const loggedIn = getLoggedIn();
   const user = getUserData() || {}; 
   
-  // Admin aur Alumni DONO check honge
+  // 🔥 FIX: Admin aur Alumni DONO check honge!
   const userRole = user?.role?.toLowerCase();
   const canGenerateLink = userRole === 'alumni' || userRole === 'admin';
   
@@ -34,21 +34,27 @@ const Meeting = () => {
     }
   }, [loggedIn]);
 
+  // 🔥 NAYA: Tu manually apna asli Google Meet link paste karega
+  const handleManualLinkChange = (e) => {
+    setMeetingLink(e.target.value);
+  };
+
   const handleGenerateMeetingLink = async () => {
+    // 🔥 STRICT CHECK: Agar dabba khali hai ya link valid nahi hai, toh seedha Error dega!
+    if (!meetingLink || !meetingLink.startsWith('http')) {
+      toast.error("⚠️ Please paste a valid Google Meet or Zoom link first!");
+      return;
+    }
+
     setLoading(true);
-    
-    // 🔥 JADOO YAHAN HAI: Jitsi Meet ka link generate ho raha hai jo hamesha kaam karta hai!
-    const randomCode = Math.random().toString(36).substring(2, 10);
-    const newMeetingLink = `https://meet.jit.si/SynnexAlumni-${randomCode}`;
     
     try {
       await axios.post('https://synnex-backend.onrender.com/api/meeting', {
-        link: newMeetingLink,
+        link: meetingLink, // Yahan sirf tera paste kiya hua ASLI link aayega
         role: userRole
       });
       
-      setMeetingLink(newMeetingLink);
-      toast.success("Meeting link Generated & Broadcasted to everyone! 🚀");
+      toast.success("Meeting link saved & Broadcasted to everyone! 🚀");
     } catch (error) {
       console.error("Error saving meeting:", error);
       toast.error("Database Error: Failed to broadcast link.");
@@ -74,22 +80,23 @@ const Meeting = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Alumni Meeting Room 🎥</h2>
               <p className="text-gray-500">
                 {canGenerateLink 
-                  ? "Click Generate to instantly create and share a meeting room." 
+                  ? "Paste your real Google Meet/Zoom link below to broadcast." 
                   : "Active meeting link shared by the Alumni/Admin is below."}
               </p>
             </div>
 
             <div className="mb-6">
               <label htmlFor="meetingLink" className="block text-sm font-semibold text-gray-700 mb-2">
-                {canGenerateLink ? "Generated Meeting Link" : "Active Meeting Link"}
+                {canGenerateLink ? "Your Secure Meeting Link" : "Active Meeting Link"}
               </label>
               <input
                 id="meetingLink"
                 type="text"
                 className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
                 value={meetingLink}
-                placeholder={canGenerateLink ? "Click 'Generate Link' below..." : "Waiting for meeting to start..."}
-                readOnly // Ise wapas readOnly kar diya kyunki ab type nahi karna hai
+                onChange={handleManualLinkChange}
+                placeholder={canGenerateLink ? "Paste real link here (e.g., https://meet.google.com/...)" : "Waiting for meeting to start..."}
+                readOnly={!canGenerateLink} 
               />
             </div>
 
@@ -100,7 +107,7 @@ const Meeting = () => {
                   onClick={handleGenerateMeetingLink}
                   disabled={loading}
                 >
-                  {loading ? "Generating..." : "Generate Link"}
+                  {loading ? "Broadcasting..." : "1. Broadcast Link"}
                 </button>
               )}
               <button
@@ -112,7 +119,7 @@ const Meeting = () => {
                 onClick={handleJoinMeeting}
                 disabled={!meetingLink}
               >
-                Join Meeting
+                {canGenerateLink ? '2. Join Meeting' : 'Join Meeting'}
               </button>
             </div>
           </div>
