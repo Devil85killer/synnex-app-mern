@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-// 🔥 Meeting (FaVideo) aur Mail (FaEnvelopeOpenText) ke icons wapas add kar diye
-import { FaHome, FaCalendar, FaBriefcase, FaUserTie, FaSearch, FaBars, FaTimes, FaNewspaper, FaCommentDots, FaVideo, FaEnvelopeOpenText } from 'react-icons/fa';
+// 🔥 FaSearch hata diya gaya hai
+import { FaHome, FaCalendar, FaBriefcase, FaUserTie, FaBars, FaTimes, FaNewspaper, FaCommentDots, FaVideo, FaEnvelopeOpenText } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getLoggedIn } from '../services/authService';
@@ -61,7 +61,7 @@ function Topbar() {
           <FaBriefcase className="mr-1.5" /> Jobs
         </Link>
 
-        {/* 🔥 Meeting aur Send Mail wapas aa gaye, Bina kisi restriction ke sabke liye! */}
+        {/* 🔥 Meeting aur Send Mail barabar set hain */}
         <Link to="/meeting" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaVideo className="mr-1.5" /> Meeting
         </Link>
@@ -77,10 +77,8 @@ function Topbar() {
         <Link to="/feedback" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaCommentDots className="mr-1.5" /> Feedback
         </Link>
-        
-        <Link to="/search-people" className="text-sm flex items-center hover:text-blue-600 transition">
-          <FaSearch className="mr-1.5" /> Search Alumni
-        </Link>
+
+        {/* 🔥 SEARCH ALUMNI YAHAN SE HATA DIYA GAYA HAI 🔥 */}
 
         {/* Auth Buttons */}
         <div className="flex flex-col lg:flex-row gap-2 mt-4 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-200 w-full lg:w-auto">
