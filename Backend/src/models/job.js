@@ -21,6 +21,10 @@ const jobSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    applyLink: {      // 🔥 NAYA: Ye rasta khol diya apply link ke liye!
+      type: String,
+      required: true,
+    },
     vacancy: {
       type: Number,
       default: 1,     // 🔥 'required: true' hata diya taaki crash na ho, aur default 1 set kar diya
