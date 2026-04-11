@@ -3,17 +3,16 @@ import { Bars3Icon, XMarkIcon, ArrowRightOnRectangleIcon } from '@heroicons/reac
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { getUserRole } from '../services/authService';
 
-// 🔥 SMART NAVIGATION: AdminOnly flag set kar diya
+// 🔥 SMART NAVIGATION: Ab Meeting aur Mail sabko dikhega!
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Events', href: '/events' },
   { name: 'Jobs', href: '/jobs' },
-  { name: 'Meeting', href: '/meeting', adminOnly: true },      
+  { name: 'Meeting', href: '/meeting' },        // 🔥 adminOnly hata diya taaki sab join kar sakein
   { name: 'Search Alumni', href: '/search-people' },
-  { name: 'Send Mail', href: '/send-mail', adminOnly: true },  
+  { name: 'Send Mail', href: '/send-mail' },    // 🔥 adminOnly hata diya taaki tu test mail bhej sake
   { name: 'News & Notices', href: '/newsletter' },
   { name: 'Feedback', href: '/feedback' },
-  // 🔥 Bulk Import yahan se puri tarah gayab
 ];
 
 function classNames(...classes) {
@@ -26,7 +25,7 @@ function Navbar() {
   
   const role = getUserRole()?.toLowerCase();
 
-  // 🔥 FILTER ROUTE: Normal users se Meeting aur Mail chupa dega
+  // 🔥 FILTER ROUTE: Ab meeting item me adminOnly nahi hai, toh filter usko rokenge nahi
   const allowedNavigation = navigation.filter(item => {
     if (item.adminOnly && role !== 'admin') {
       return false; 
