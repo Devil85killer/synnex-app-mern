@@ -17,18 +17,20 @@ const sendMailController = async (req, res) => {
     // 1. Postman Setup
     const transporter = nodemailer.createTransport({
       host: "smtp-relay.brevo.com",
-      port: 2525, // 🔥 FIX: Yahan maine 587 ko 2525 kar diya hai timeout se bachne ke liye!
+      port: 2525, 
       secure: false, 
       auth: {
-        user: process.env.BREVO_SMTP_USER, 
-        pass: process.env.BREVO_SMTP_PASS, 
+        user: process.env.BREVO_SMTP_USER, // Yahan a7c57... wala login id aayega (Render se)
+        pass: process.env.BREVO_SMTP_PASS, // Yahan lamba wala password aayega (Render se)
       },
     });
 
     // 2. Email Format
     const mailOptions = {
-      from: `"Synnex Portal" <${process.env.BREVO_SMTP_USER}>`, 
-      replyTo: from, 
+      // 🔥🔥🔥 SABSE BADA FIX YAHAN HAI 🔥🔥🔥
+      // Yahan hardcode karna zaroori hai tera verified email
+      from: `"Synnex Portal" <sjogesh680@gmail.com>`, 
+      replyTo: from, // Jisko reply milega
       to: to,
       subject: subject,
       text: message,
@@ -51,11 +53,10 @@ const sendMailController = async (req, res) => {
     res.status(200).json({ status: "success", message: "Email sent successfully!" });
   } catch (error) {
     console.error("🔥 Error sending email:", error);
-    // 🔥 NAYA: Ab error ka asli reason frontend network tab mein dikhega!
     res.status(500).json({ 
         status: "error", 
         message: "Failed to send email.", 
-        errorDetails: error.message // Ye line humein sachai batayegi
+        errorDetails: error.message 
     });
   }
 };
