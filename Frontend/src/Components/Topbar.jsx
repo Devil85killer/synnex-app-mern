@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-// 🔥 Removed unused icons (FaUpload, FaVideo, FaEnvelopeOpenText) to clean up code
-import { FaHome, FaCalendar, FaBriefcase, FaUserTie, FaSearch, FaBars, FaTimes, FaNewspaper, FaCommentDots } from 'react-icons/fa';
+// 🔥 Meeting (FaVideo) aur Mail (FaEnvelopeOpenText) ke icons wapas add kar diye
+import { FaHome, FaCalendar, FaBriefcase, FaUserTie, FaSearch, FaBars, FaTimes, FaNewspaper, FaCommentDots, FaVideo, FaEnvelopeOpenText } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getLoggedIn } from '../services/authService';
@@ -61,6 +61,15 @@ function Topbar() {
           <FaBriefcase className="mr-1.5" /> Jobs
         </Link>
 
+        {/* 🔥 Meeting aur Send Mail wapas aa gaye, Bina kisi restriction ke sabke liye! */}
+        <Link to="/meeting" className="text-sm flex items-center hover:text-blue-600 transition">
+          <FaVideo className="mr-1.5" /> Meeting
+        </Link>
+
+        <Link to="/send-mail" className="text-sm flex items-center hover:text-blue-600 transition">
+          <FaEnvelopeOpenText className="mr-1.5" /> Send Mail
+        </Link>
+
         <Link to="/newsletter" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaNewspaper className="mr-1.5" /> News & Notices
         </Link>
@@ -68,8 +77,6 @@ function Topbar() {
         <Link to="/feedback" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaCommentDots className="mr-1.5" /> Feedback
         </Link>
-
-        {/* 🔥 Meeting, Bulk Import, aur Send Mail YAHAN SE HATA DIYE GAYE HAIN */}
         
         <Link to="/search-people" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaSearch className="mr-1.5" /> Search Alumni
