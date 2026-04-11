@@ -9,7 +9,7 @@ const router = require("./src/routes");
 
 // 1. IMPORT CONTROLLERS & MODELS
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
-const User = require("./src/models/userModel"); // 🔥 Maine curly braces hata diye aur path theek kar diya 
+const User = require("./src/models/user"); // 🔥 Maine curly braces hata diye aur path theek kar diya 
 
 // MODELS IMPORT
 let Job, Event, News, Feedback;
