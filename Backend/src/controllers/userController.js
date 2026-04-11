@@ -1,4 +1,4 @@
-const { User } = require("../models/userModel");
+const User = require("../models/userModel"); // 🔥 Yahan se curly braces hata diye
 
 // Function to fetch all users
 async function getAllUsers(req, res) {
