@@ -9,7 +9,7 @@ const router = require("./src/routes");
 
 // 1. IMPORT CONTROLLERS & MODELS
 const { saveMeetingLink, getMeetingLink } = require('./src/controllers/meetingController');
-const { User } = require("./src/models/user"); 
+const User = require("./src/models/user"); // 🔥 Maine curly braces hata diye aur path theek kar diya 
 
 // MODELS IMPORT
 let Job, Event, News, Feedback;
@@ -68,7 +68,10 @@ app.get('/api/admin/all-users', async (req, res) => {
   try {
     const users = await User.find({}).select("-password"); 
     res.status(200).json(users);
-  } catch (error) { res.status(500).json({ message: "Error fetching users" }); }
+  } catch (error) { 
+    console.error("🔥 ASLI ERROR FETCHING USERS:", error.message);
+    res.status(500).json({ message: "Error fetching users", asliError: error.message }); 
+  }
 });
 
 app.delete('/api/admin/user/:id', async (req, res) => {
@@ -76,6 +79,21 @@ app.delete('/api/admin/user/:id', async (req, res) => {
     await User.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "User deleted" });
   } catch (error) { res.status(500).json({ message: "Failed to delete user" }); }
+});
+
+// 🔥 NAYA 1: APPROVE USER ROUTE 🔥
+app.put('/api/admin/user/:id/approve', async (req, res) => {
+    try {
+      const user = await User.findByIdAndUpdate(
+        req.params.id, 
+        { isApproved: true }, 
+        { new: true }
+      );
+      if (!user) return res.status(404).json({ message: "User not found" });
+      res.status(200).json({ message: "User approved successfully!", user });
+    } catch (error) { 
+      res.status(500).json({ message: "Failed to approve user", error: error.message }); 
+    }
 });
 
 app.put('/api/admin/reset-password/:id', async (req, res) => {
@@ -265,6 +283,17 @@ app.post('/api/admin/news', async (req, res) => {
         await newNotice.save();
         res.status(201).json(newNotice);
     } catch (error) { res.status(500).json({ message: "Failed to publish notice" }); }
+});
+
+// 🔥 NAYA 2: DELETE NEWS ROUTE 🔥
+app.delete('/api/admin/news/:id', async (req, res) => {
+    try {
+        if (!News) return res.status(400).json({ message: "News model not found" });
+        await News.findByIdAndDelete(req.params.id);
+        res.status(200).json({ message: "Notice deleted successfully" });
+    } catch (error) { 
+        res.status(500).json({ message: "Error deleting notice" }); 
+    }
 });
 
 app.get('/api/admin/all-feedback', async (req, res) => {
