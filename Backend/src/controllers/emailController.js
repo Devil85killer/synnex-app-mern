@@ -17,7 +17,7 @@ const sendMailController = async (req, res) => {
     // 1. Postman Setup
     const transporter = nodemailer.createTransport({
       host: "smtp-relay.brevo.com",
-      port: 587, // Agar ye na chale aglee baar, toh hum isko 2525 kar denge
+      port: 2525, // 🔥 FIX: Yahan maine 587 ko 2525 kar diya hai timeout se bachne ke liye!
       secure: false, 
       auth: {
         user: process.env.BREVO_SMTP_USER, 
