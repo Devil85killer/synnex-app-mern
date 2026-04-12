@@ -11,17 +11,29 @@ const createNewsController = async (req, res) => {
       return res.status(403).json({ status: "fail", message: "Access Denied: You do not have permission to post news." });
     }
 
-    const { title, type, content } = req.body;
+    // 🔥 FIX: req.body se 'author' bhi nikal rahe hain
+    const { title, type, content, author } = req.body;
     
     // SAFE USER ID CHECK
     const createdBy = req.user._id || req.user.id;
 
-    const news = await News.create({ title, type, content, createdBy });
+    // 🔥 FIX: Asli naam ensure kar rahe hain taaki blank na jaye
+    const finalAuthor = author || (req.user.firstName ? `${req.user.firstName} ${req.user.lastName || ''}` : "College Admin");
+
+    // Ab author aur createdBy dono safely save honge
+    const news = await News.create({ 
+      title, 
+      type, 
+      content, 
+      createdBy, 
+      author: finalAuthor 
+    });
     
     res.status(201).json({ status: "success", data: { news } });
   } catch (error) {
     console.error("Error publishing news:", error);
-    res.status(500).json({ status: "fail", message: "Error publishing news" });
+    // 🔥 MAGIC: Agar galti se crash hua, toh actual reason console aur network tab mein aayega
+    res.status(500).json({ status: "fail", message: "Error publishing news", exactError: error.message });
   }
 };
 
