@@ -9,68 +9,59 @@ const Meeting = () => {
   const loggedIn = getLoggedIn();
   const user = getUserData() || {}; 
   
-  // 🔥 Admin aur Alumni DONO ko link paste karne ka power milega
   const userRole = user?.role?.toLowerCase();
   const canGenerateLink = userRole === 'alumni' || userRole === 'admin';
+  // 🔥 Creator ka naam nikal rahe hain user context se
+  const creatorName = userRole === 'admin' ? user?.adminName : user?.firstName;
   
   const [meetingLink, setMeetingLink] = useState('');
-  const [meetingTime, setMeetingTime] = useState(''); // 🔥 NAYA: Time ke liye state
+  const [meetingTime, setMeetingTime] = useState(''); 
+  const [meetingReason, setMeetingReason] = useState(''); // 🔥 NAYA: Agenda State
+  const [hostName, setHostName] = useState(''); // 🔥 NAYA: Kisne banaya wo dikhane ke liye
   const [loading, setLoading] = useState(false);
 
-  // Page load hote hi backend se current link aur time layega
   useEffect(() => {
     const fetchMeetingLink = async () => {
       try {
         const response = await axios.get('https://synnex-backend.onrender.com/api/meeting');
         if (response.data.status === 'success') {
           if (response.data.link) setMeetingLink(response.data.link);
-          if (response.data.time) setMeetingTime(response.data.time); // 🔥 Time bhi fetch hoga
+          if (response.data.time) setMeetingTime(response.data.time);
+          if (response.data.reason) setMeetingReason(response.data.reason); // Pura reason fetch
+          if (response.data.creatorName) setHostName(response.data.creatorName);
         }
       } catch (error) {
-        console.log("No active meeting found on server.");
+        console.log("No active meeting found.");
       }
     };
     if (loggedIn) fetchMeetingLink();
   }, [loggedIn]);
 
-  const handleManualLinkChange = (e) => {
-    setMeetingLink(e.target.value);
-  };
-
-  // Broadcast button dabane par ye chalega
   const handleSaveMeetingLink = async () => {
     if (!meetingLink || !meetingLink.startsWith('http')) {
-      toast.error("⚠️ Error: Please copy and paste a REAL Google Meet link!");
-      return;
+      toast.error("⚠️ Error: Please paste a REAL Google Meet link!"); return;
     }
-    
-    // 🔥 CHECK: Time select kiya hai ya nahi
     if (!meetingTime) {
-      toast.error("⚠️ Please select a Date and Time for the meeting!");
-      return;
+      toast.error("⚠️ Please select a Date and Time!"); return;
+    }
+    if (!meetingReason) {
+      toast.error("⚠️ Please enter a Meeting Agenda/Reason!"); return;
     }
 
     setLoading(true);
     try {
-      // 🔥 NAYA: Link ke sath 'time' bhi backend bhej rahe hain
       await axios.post('https://synnex-backend.onrender.com/api/meeting', {
         link: meetingLink,
         time: meetingTime,
+        reason: meetingReason, // 🔥 NAYA
+        creatorName: creatorName || "Alumni", // 🔥 NAYA
         role: userRole
       });
-      toast.success("Meeting Link & Time Broadcasted to Everyone! 🚀");
+      toast.success("Meeting Broadcasted to Everyone! 🚀");
     } catch (error) {
-      console.error("Error saving meeting:", error);
       toast.error("Database Error: Failed to save link.");
     }
     setLoading(false);
-  };
-
-  const handleJoinMeeting = () => {
-    if (meetingLink) {
-      toast.info("Opening Meeting Room..."); 
-      window.open(meetingLink, '_blank', 'noopener,noreferrer');
-    }
   };
 
   return (
@@ -80,75 +71,80 @@ const Meeting = () => {
       <div className="max-w-lg w-full p-8 bg-white rounded-xl shadow-lg border border-gray-100">
         {loggedIn ? (
           <div>
-            <div className="text-center mb-8">
+            <div className="text-center mb-6">
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Alumni Meeting Room 🎥</h2>
               <p className="text-gray-500">
-                {canGenerateLink 
-                  ? "Paste link and select time to broadcast it." 
-                  : "Active meeting details shared by the Alumni/Admin are below."}
+                {canGenerateLink ? "Create a new meeting broadcast." : "Latest active meeting details."}
               </p>
             </div>
 
+            {/* 🔥 NAYA: Meeting Host Info (Student view ke liye) */}
+            {!canGenerateLink && hostName && (
+              <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg mb-6 text-sm font-medium">
+                🗣️ Hosted by: <span className="font-bold">{hostName}</span>
+              </div>
+            )}
+
+            {/* Agenda/Reason Box */}
             <div className="mb-4">
-              <label htmlFor="meetingLink" className="block text-sm font-semibold text-gray-700 mb-2">
-                {canGenerateLink ? "Your Secure Meeting Link" : "Active Meeting Link"}
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Meeting Agenda/Reason</label>
               <input
-                id="meetingLink"
                 type="text"
-                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
-                value={meetingLink}
-                onChange={handleManualLinkChange}
-                placeholder={canGenerateLink ? "Paste real link here (https://meet.google.com/...)" : "Waiting for meeting to start..."}
+                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none"
+                value={meetingReason}
+                onChange={(e) => setMeetingReason(e.target.value)}
+                placeholder={canGenerateLink ? "e.g., TCS Interview Prep" : "No agenda specified"}
                 readOnly={!canGenerateLink} 
               />
             </div>
 
-            {/* 🔥 NAYA: Date and Time Picker */}
-            <div className="mb-6">
-              <label htmlFor="meetingTime" className="block text-sm font-semibold text-gray-700 mb-2">
-                Meeting Date & Time
-              </label>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Meeting Link</label>
               <input
-                id="meetingTime"
+                type="text"
+                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none"
+                value={meetingLink}
+                onChange={(e) => setMeetingLink(e.target.value)}
+                placeholder={canGenerateLink ? "Paste real link here..." : "Waiting for meeting..."}
+                readOnly={!canGenerateLink} 
+              />
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Date & Time</label>
+              <input
                 type="datetime-local"
-                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
+                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none"
                 value={meetingTime}
                 onChange={(e) => setMeetingTime(e.target.value)}
                 readOnly={!canGenerateLink} 
               />
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 mt-8">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6">
               {canGenerateLink && (
                 <button
                   className="flex-1 border-2 border-black text-black hover:bg-black hover:text-white px-4 py-3 rounded-lg font-bold transition duration-300 disabled:opacity-50"
                   onClick={handleSaveMeetingLink}
                   disabled={loading}
                 >
-                  {loading ? "Broadcasting..." : "1. Broadcast Meeting"}
+                  {loading ? "Broadcasting..." : "Broadcast Meeting"}
                 </button>
               )}
               <button
-                className={`flex-1 px-4 py-3 rounded-lg font-bold transition duration-300 shadow-md ${
-                  meetingLink 
-                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
-                }`}
-                onClick={handleJoinMeeting}
+                className={`flex-1 px-4 py-3 rounded-lg font-bold transition duration-300 shadow-md ${meetingLink ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}
+                onClick={() => meetingLink && window.open(meetingLink, '_blank')}
                 disabled={!meetingLink}
               >
-                {canGenerateLink ? '2. Join Meeting' : 'Join Meeting'}
+                Join Meeting
               </button>
             </div>
           </div>
         ) : (
+          /* Login Check... */
           <div className="text-center py-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">You're Not Logged In 🔒</h1>
-            <p className="text-gray-600 mb-8">Please log in to access the secure meeting rooms.</p>
-            <Link to="/login" className="bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition">
-              Go to Login
-            </Link>
+            <h1 className="text-3xl font-bold mb-4">You're Not Logged In 🔒</h1>
+            <Link to="/login" className="bg-black text-white px-8 py-3 rounded-lg font-bold">Go to Login</Link>
           </div>
         )}
       </div>
