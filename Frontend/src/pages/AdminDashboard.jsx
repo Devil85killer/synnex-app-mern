@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UsersIcon, BriefcaseIcon, CalendarIcon, ChartBarIcon, ArrowRightOnRectangleIcon,
-  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, VideoCameraIcon // 🔥 NAYA: Video Icon Add Kiya
+  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -19,7 +19,7 @@ function AdminDashboard() {
   const [events, setEvents] = useState([]);
   const [news, setNews] = useState([]); 
   const [feedbacks, setFeedbacks] = useState([]); 
-  const [meetings, setMeetings] = useState([]); // 🔥 NAYA: Meetings ke liye state
+  const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // Modals States
@@ -41,7 +41,7 @@ function AdminDashboard() {
     }
   }, [loggedIn, userRole, navigate]);
 
-  // 🔥 API Functions
+  // API Functions
   const fetchUsers = async () => { 
     try { 
       const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); 
@@ -55,8 +55,6 @@ function AdminDashboard() {
   const fetchJobs = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {} };
   const fetchEvents = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {} };
   const fetchNews = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {} };
-  
-  // 🔥 FIX: Feedback ka data extract karne ka bulletproof logic
   const fetchFeedbacks = async () => { 
     try { 
       const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); 
@@ -66,7 +64,6 @@ function AdminDashboard() {
     } catch (err) { console.error("Feedback fetch error:", err); } 
   };
 
-  // 🔥 NAYA: Saari meetings fetch karne ka logic
   const fetchMeetings = async () => { 
     try { 
       const res = await axios.get('https://synnex-backend.onrender.com/api/meeting/all', { withCredentials: true }); 
@@ -79,7 +76,6 @@ function AdminDashboard() {
   useEffect(() => {
     if (userRole === 'admin') {
       setLoading(true);
-      // 🔥 NAYA: fetchMeetings ko array me add kar diya
       Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks(), fetchMeetings()]).finally(() => setLoading(false));
     }
   }, [userRole]);
@@ -159,6 +155,18 @@ function AdminDashboard() {
         await axios.delete(`https://synnex-backend.onrender.com/api/admin/news/${id}`, { withCredentials: true });
         setNews(news.filter(n => n._id !== id));
       } catch (err) { alert("Error deleting notice."); }
+    }
+  };
+
+  // 🔥 NAYA: Meeting Delete karne ka function
+  const handleDeleteMeeting = async (meetingId) => {
+    if (window.confirm("Are you sure you want to delete this meeting history?")) {
+      try {
+        await axios.delete(`https://synnex-backend.onrender.com/api/meeting/${meetingId}`, { withCredentials: true });
+        setMeetings(meetings.filter(m => m._id !== meetingId)); // UI se turant hatao
+      } catch (error) { 
+        alert("Failed to delete meeting."); 
+      }
     }
   };
 
@@ -324,11 +332,22 @@ function AdminDashboard() {
                   <div key={m._id} className="border border-gray-200 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition">
                     <div>
                       <h3 className="font-bold text-lg text-gray-900">{m.reason || "General Meetup"}</h3>
-                      <p className="text-sm text-gray-600">🗣 Hosted by: <span className="font-semibold text-black">{m.creatorName || "Unknown"}</span> ({m.hostRole})</p>
+                      {/* 🔥 "Unknown" ki jagah "Alumni" default kiya gaya hai */}
+                      <p className="text-sm text-gray-600">🗣 Hosted by: <span className="font-semibold text-black">{m.creatorName || "Alumni"}</span> ({m.hostRole})</p>
                       <p className="text-xs text-gray-500 mt-1">📅 Scheduled for: {m.time ? new Date(m.time).toLocaleString() : "N/A"}</p>
                       <a href={m.link} target="_blank" rel="noreferrer" className="text-blue-500 text-sm hover:underline mt-2 inline-block">🔗 {m.link}</a>
                     </div>
-                    <span className="text-xs text-gray-400 mt-2 md:mt-0 bg-gray-100 px-2 py-1 rounded">Created: {new Date(m.createdAt).toLocaleDateString()}</span>
+                    
+                    {/* 🔥 Delete Button Add Kiya */}
+                    <div className="flex flex-col items-end space-y-2 mt-4 md:mt-0">
+                      <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">Created: {new Date(m.createdAt).toLocaleDateString()}</span>
+                      <button 
+                        onClick={() => handleDeleteMeeting(m._id)} 
+                        className="text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded font-bold text-sm transition border border-red-100"
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
