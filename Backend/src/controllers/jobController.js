@@ -15,11 +15,14 @@ const createJobController = async (req, res) => {
       });
     }
 
-    // EXTRACTION: 🔥 NAYA: 'applyLink' ko yahan add kar diya
-    const { title, company, location, type, description, applyLink } = req.body;
+    // EXTRACTION: 🔥 NAYA: 'postedBy' ko bhi yahan add kiya
+    const { title, company, location, type, description, applyLink, postedBy } = req.body;
     
     // SAFE USER ID CHECK
     const createdBy = req.user._id || req.user.id; 
+
+    // 🔥 FIX: Asli naam ensure kar rahe hain taaki blank na jaye
+    const finalPostedBy = postedBy || (req.user.firstName ? `${req.user.firstName} ${req.user.lastName || ''}`.trim() : "Verified Alumni");
 
     // DATABASE SAVE
     const job = await Job.create({
@@ -28,7 +31,8 @@ const createJobController = async (req, res) => {
       location,     
       type,         
       description,
-      applyLink,    // 🔥 NAYA: Database mein save karne ke liye add kiya
+      applyLink,    
+      postedBy: finalPostedBy, // 🔥 NAYA: Database mein Naam save hoga
       createdBy,
     });
 
@@ -43,6 +47,7 @@ const createJobController = async (req, res) => {
     res.status(500).json({
       status: "fail",
       message: "Internal Server Error",
+      exactError: error.message // Debugging ke liye add kiya
     });
   }
 };
