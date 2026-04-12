@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UsersIcon, BriefcaseIcon, CalendarIcon, ChartBarIcon, ArrowRightOnRectangleIcon,
-  DocumentTextIcon, ChatBubbleLeftEllipsisIcon 
+  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, VideoCameraIcon // 🔥 NAYA: Video Icon Add Kiya
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -19,6 +19,7 @@ function AdminDashboard() {
   const [events, setEvents] = useState([]);
   const [news, setNews] = useState([]); 
   const [feedbacks, setFeedbacks] = useState([]); 
+  const [meetings, setMeetings] = useState([]); // 🔥 NAYA: Meetings ke liye state
   const [loading, setLoading] = useState(false);
 
   // Modals States
@@ -40,36 +41,46 @@ function AdminDashboard() {
     }
   }, [loggedIn, userRole, navigate]);
 
-  // 🔥 API Functions - FIX APPLIED HERE 🔥
+  // 🔥 API Functions
   const fetchUsers = async () => { 
     try { 
       const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-users', { withCredentials: true }); 
-      console.log("Users API Response:", res.data); // Network tab mein response dekhne ke liye
-      
-      // Bulletproof logic to extract array regardless of backend structure
-      if (res.data && res.data.data && Array.isArray(res.data.data.users)) {
-        setUsers(res.data.data.users);
-      } else if (res.data && Array.isArray(res.data.users)) {
-        setUsers(res.data.users);
-      } else if (Array.isArray(res.data)) {
-        setUsers(res.data);
-      } else {
-        setUsers([]); // Agar kuch na mile toh table khali rakho, crash mat karo
-      }
-    } catch (err) { 
-      console.error("Failed to fetch users", err);
-    } 
+      if (res.data && res.data.data && Array.isArray(res.data.data.users)) setUsers(res.data.data.users);
+      else if (res.data && Array.isArray(res.data.users)) setUsers(res.data.users);
+      else if (Array.isArray(res.data)) setUsers(res.data);
+      else setUsers([]);
+    } catch (err) { console.error("Failed to fetch users", err); } 
   };
   
   const fetchJobs = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {} };
   const fetchEvents = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {} };
   const fetchNews = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {} };
-  const fetchFeedbacks = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); setFeedbacks(res.data); } catch (err) {} };
+  
+  // 🔥 FIX: Feedback ka data extract karne ka bulletproof logic
+  const fetchFeedbacks = async () => { 
+    try { 
+      const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); 
+      if (res.data && Array.isArray(res.data.data)) setFeedbacks(res.data.data);
+      else if (Array.isArray(res.data)) setFeedbacks(res.data);
+      else setFeedbacks([]);
+    } catch (err) { console.error("Feedback fetch error:", err); } 
+  };
+
+  // 🔥 NAYA: Saari meetings fetch karne ka logic
+  const fetchMeetings = async () => { 
+    try { 
+      const res = await axios.get('https://synnex-backend.onrender.com/api/meeting/all', { withCredentials: true }); 
+      if (res.data && Array.isArray(res.data.data)) setMeetings(res.data.data);
+      else if (Array.isArray(res.data)) setMeetings(res.data);
+      else setMeetings([]);
+    } catch (err) { console.error("Meeting fetch error:", err); } 
+  };
 
   useEffect(() => {
     if (userRole === 'admin') {
       setLoading(true);
-      Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks()]).finally(() => setLoading(false));
+      // 🔥 NAYA: fetchMeetings ko array me add kar diya
+      Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks(), fetchMeetings()]).finally(() => setLoading(false));
     }
   }, [userRole]);
 
@@ -96,12 +107,9 @@ function AdminDashboard() {
     if (window.confirm(`Are you sure you want to approve ${userName} to access the platform?`)) {
       try {
         await axios.put(`https://synnex-backend.onrender.com/api/admin/user/${userId}/approve`, {}, { withCredentials: true });
-        // Update UI instantly
         setUsers(users.map(u => u._id === userId ? { ...u, isApproved: true } : u));
         alert(`${userName} has been successfully approved!`);
-      } catch (error) { 
-        alert("Failed to approve user."); 
-      }
+      } catch (error) { alert("Failed to approve user."); }
     }
   };
 
@@ -160,18 +168,11 @@ function AdminDashboard() {
     setLoadingAttendees(true);
     try {
       const res = await axios.get(`https://synnex-backend.onrender.com/api/admin/event-attendees/${eventId}`, { withCredentials: true });
-      
-      // Backend automatically cleans ghost data and sends only valid ones
       setAttendeesList(res.data);
-      
-      // Live sync the main events array to instantly fix the View (count) mismatch
       setEvents(prevEvents => prevEvents.map(ev => {
-          if (ev._id === eventId) {
-              return { ...ev, attendees: res.data.map(u => u._id) };
-          }
+          if (ev._id === eventId) return { ...ev, attendees: res.data.map(u => u._id) };
           return ev;
       }));
-      
     } catch (error) {
       alert("Could not fetch attendees list.");
       setAttendeesList([]);
@@ -184,19 +185,14 @@ function AdminDashboard() {
     if (window.confirm(`Are you sure you want to remove ${userName} from this event?`)) {
       try {
         await axios.delete(`https://synnex-backend.onrender.com/api/admin/event/${currentEventId}/attendee/${userId}`, { withCredentials: true });
-        
         setAttendeesList(attendeesList.filter(user => user._id !== userId && user.email !== `ID: ${userId}`));
-        
         setEvents(events.map(ev => {
             if (ev._id === currentEventId) {
                 return { ...ev, attendees: ev.attendees.filter(id => id !== userId && id !== userId.toString()) };
             }
             return ev;
         }));
-        
-      } catch (error) {
-        alert("Failed to remove user.");
-      }
+      } catch (error) { alert("Failed to remove user."); }
     }
   };
 
@@ -315,6 +311,31 @@ function AdminDashboard() {
           </div>
         );
 
+      // 🔥 NAYA: Meeting History Tab Ka Content
+      case 'meetings':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
+            <h2 className="text-2xl font-bold mb-6">Meeting History Logs</h2>
+            {meetings.length === 0 ? ( 
+              <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">No meetings have been broadcasted yet.</p> 
+            ) : (
+              <div className="space-y-4">
+                {meetings.map(m => (
+                  <div key={m._id} className="border border-gray-200 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition">
+                    <div>
+                      <h3 className="font-bold text-lg text-gray-900">{m.reason || "General Meetup"}</h3>
+                      <p className="text-sm text-gray-600">🗣 Hosted by: <span className="font-semibold text-black">{m.creatorName || "Unknown"}</span> ({m.hostRole})</p>
+                      <p className="text-xs text-gray-500 mt-1">📅 Scheduled for: {m.time ? new Date(m.time).toLocaleString() : "N/A"}</p>
+                      <a href={m.link} target="_blank" rel="noreferrer" className="text-blue-500 text-sm hover:underline mt-2 inline-block">🔗 {m.link}</a>
+                    </div>
+                    <span className="text-xs text-gray-400 mt-2 md:mt-0 bg-gray-100 px-2 py-1 rounded">Created: {new Date(m.createdAt).toLocaleDateString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
       case 'jobs':
         return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
@@ -407,6 +428,11 @@ function AdminDashboard() {
           <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><CalendarIcon className="h-5 w-5 mr-3"/>Event Manager</button>
           <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><DocumentTextIcon className="h-5 w-5 mr-3"/>News & Notices</button>
           <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3"/>User Feedback</button>
+          
+          {/* 🔥 NAYA: Meeting History Button */}
+          <button onClick={() => setActiveTab('meetings')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'meetings' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+            <VideoCameraIcon className="h-5 w-5 mr-3"/>Meeting History
+          </button>
         </nav>
         <div className="p-4 border-t border-gray-800">
           <button onClick={() => navigate('/login')} className="flex items-center w-full p-3 text-red-400 hover:bg-gray-800 rounded-lg transition font-medium"><ArrowRightOnRectangleIcon className="h-5 w-5 mr-3" /> Logout</button>
@@ -426,6 +452,7 @@ function AdminDashboard() {
         </main>
       </div>
 
+      {/* Attendees Modal */}
       {showAttendeesModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden relative">
