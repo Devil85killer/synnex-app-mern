@@ -20,17 +20,18 @@ import Home from "./Components/Home.jsx";
 import Event from "./Components/Event.jsx";
 import Jobs from "./Components/Jobs.jsx";
 import Newsletter from "./Components/NewsLetter.jsx";
-import SendMail from "./Components/SendMail.jsx";
+// 🔥 NAYA: SendMail ko hata kar Complaint import kiya
+import Complaint from "./Components/Complaint.jsx"; 
 import BulkUpload from "./Components/BulkUpload.jsx";
 import SearchPeople from "./Components/SearchPeople.jsx";
 import Meeting from "./Components/Meeting.jsx";
 import Feedback from "./Components/Feedback.jsx";
 import Profile from "./Components/Profile.jsx";
 
-// 🔥 NAYA: Forgot Password ka import yahan add kiya hai
+// 🔥 Forgot Password ka import
 import ForgotPassword from "./pages/ForgotPassword.jsx"; 
 
-// 🔥 NAYA: Tere Secret Admin Panel ke imports
+// 🔥 Tere Secret Admin Panel ke imports
 import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 
@@ -55,7 +56,7 @@ const router = createBrowserRouter([
         path: "login",
         element: <Login />,
       },
-      // 🔥 NAYA: Forgot Password ka route yahan lagaya hai
+      // 🔥 Forgot Password ka route
       {
         path: "forgot-password",
         element: <ForgotPassword />,
@@ -80,9 +81,10 @@ const router = createBrowserRouter([
         path: "/newsletter",
         element: <Newsletter />,
       },
+      // 🔥 NAYA: Yahan SendMail ka rasta hata kar Complaint ka laga diya hai
       {
-        path: "/send-mail",
-        element: <SendMail />,
+        path: "/complaint",
+        element: <Complaint />,
       },
       {
         path: "/bulk-upload",
@@ -103,7 +105,7 @@ const router = createBrowserRouter([
     ],
   },
   
-  // 🔥 NAYA: SECRET ADMIN ROUTES (Layout ke bahar, ekdum alag!)
+  // 🔥 SECRET ADMIN ROUTES
   {
     path: "/synnex-hq-admin",
     element: <AdminLogin />,
