@@ -20,25 +20,26 @@ import Home from "./Components/Home.jsx";
 import Event from "./Components/Event.jsx";
 import Jobs from "./Components/Jobs.jsx";
 import Newsletter from "./Components/NewsLetter.jsx";
-// 🔥 NAYA: SendMail ko hata kar Complaint import kiya
+
+// 🔥 DONO IMPORT RAKHE HAIN
+import SendMail from "./Components/SendMail.jsx"; 
 import Complaint from "./Components/Complaint.jsx"; 
+
 import BulkUpload from "./Components/BulkUpload.jsx";
 import SearchPeople from "./Components/SearchPeople.jsx";
 import Meeting from "./Components/Meeting.jsx";
 import Feedback from "./Components/Feedback.jsx";
 import Profile from "./Components/Profile.jsx";
 
-// 🔥 Forgot Password ka import
 import ForgotPassword from "./pages/ForgotPassword.jsx"; 
 
-// 🔥 Tere Secret Admin Panel ke imports
 import AdminLogin from "./pages/AdminLogin.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />, // Ye aam janta ka darwaza hai
+    element: <Layout />, 
     children: [
       {
         path: "register",
@@ -56,7 +57,6 @@ const router = createBrowserRouter([
         path: "login",
         element: <Login />,
       },
-      // 🔥 Forgot Password ka route
       {
         path: "forgot-password",
         element: <ForgotPassword />,
@@ -81,10 +81,15 @@ const router = createBrowserRouter([
         path: "/newsletter",
         element: <Newsletter />,
       },
-      // 🔥 NAYA: Yahan SendMail ka rasta hata kar Complaint ka laga diya hai
+      // 🔥 NAYA: Complaint ka rasta (Add kiya)
       {
         path: "/complaint",
         element: <Complaint />,
+      },
+      // 🔥 WAPAS: Send Mail ka rasta (Isliye Login pe ja raha tha)
+      {
+        path: "/send-mail",
+        element: <SendMail />,
       },
       {
         path: "/bulk-upload",
@@ -105,7 +110,6 @@ const router = createBrowserRouter([
     ],
   },
   
-  // 🔥 SECRET ADMIN ROUTES
   {
     path: "/synnex-hq-admin",
     element: <AdminLogin />,
@@ -115,7 +119,6 @@ const router = createBrowserRouter([
     element: <AdminDashboard />,
   },
 
-  // Ye safety ke liye hai, koi galat URL daalega toh Login pe jayega
   {
     path: "/*",
     element: <Navigate to="/login" />,
