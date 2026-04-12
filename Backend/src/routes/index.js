@@ -10,9 +10,10 @@ const newsRoutes = require("./newsRoutes");
 const adminRoute = require("./adminRoute");
 const chatRoute = require("./chatRoute");
 const meetingRoutes = require("./meetingRoute");
-
-// 🔥 NAYA: Complaint route ko import kiya
 const complaintRoutes = require("./complaintRoutes"); 
+
+// 🔥 FIX 1: Controller ko import karna zaroori hai, warna server crash hoga!
+const { sendMailController } = require("../controllers/emailController");
 
 router.use("/register", registerRoute);
 router.use("/events", eventRoutes); 
@@ -23,9 +24,11 @@ router.use("/news", newsRoutes);
 router.use("/admin", adminRoute);
 router.use("/chat", chatRoute);
 router.use("/meeting", meetingRoutes);
-// Email Route (Wapas add kar raha hu)
-router.post('/send-mail', sendMailController);
-// 🔥 NAYA: Complaint route ko connect kar diya (Purana send-mail hata diya)
+
+// 🔥 FIX 2: Complaints route ko connect kiya
 router.use("/complaints", complaintRoutes);
+
+// 🔥 FIX 3: Email Route (Ab sendMailController define ho chuka hai, toh error nahi aayega)
+router.post('/send-mail', sendMailController);
 
 module.exports = router;
