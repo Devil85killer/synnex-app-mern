@@ -1,13 +1,11 @@
 // controllers/eventController.js
 
-// 🔥 SAFELY IMPORT MODEL (Crash se bachane ke liye bramhastra)
 const EventModel = require("../models/eventModel");
 const Event = EventModel.Event || EventModel;
 
 // Controller to create an event (Restricted to Teacher, Faculty, Alumni, Admin)
 const createEventController = async (req, res) => {
   try {
-    // SECURITY CHECK: 'faculty' ko add kar diya hai
     const allowedRoles = ["teacher", "faculty", "alumni", "admin"];
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
@@ -16,34 +14,39 @@ const createEventController = async (req, res) => {
       });
     }
 
-    // FRONTEND SE AANE WALE SAARE FIELDS NIKAL LIYE
     const { title, date, time, location, type, description } = req.body;
     
-    // SAFE USER ID CHECK (JWT se jo bhi format mein aaye)
-    const createdBy = req.user._id || req.user.id; 
-
-    // DATABASE MEIN SAVE
-    const event = await Event.create({
+    let eventData = {
       title,
       date,
-      time,        // Added time
+      time,
       location,
-      type,        // Added type (Online/Offline)
-      description,
-      createdBy,
-    });
+      type,
+      description
+    };
+
+    // SAFE USER ID CHECK + CRASH PREVENTION
+    let userId = req.user._id || req.user.id;
+    if (userId) userId = String(userId);
+
+    // 🔥 MAHA-MAGIC FIX: Strict 24-character hex check.
+    // This prevents "master_admin_id" from crashing the database!
+    if (userId && userId.length === 24 && /^[0-9a-fA-F]{24}$/.test(userId)) {
+        eventData.createdBy = userId;
+    }
+
+    const event = await Event.create(eventData);
 
     res.status(201).json({
       status: "success",
-      data: {
-        event,
-      },
+      data: { event },
     });
   } catch (error) {
     console.error("Error creating event:", error);
     res.status(500).json({
       status: "fail",
       message: "Internal Server Error",
+      exactError: error.message
     });
   }
 };
@@ -51,16 +54,13 @@ const createEventController = async (req, res) => {
 // Controller to get all events
 const getAllEventsController = async (req, res) => {
   try {
-    // Populate added so frontend knows who posted it
     const events = await Event.find()
       .populate("createdBy", "firstName lastName role")
-      .sort({ date: 1 }); // Events ko date ke hisaab se sort kar diya
+      .sort({ date: 1 }); 
 
     res.status(200).json({
       status: "success",
-      data: {
-        events,
-      },
+      data: { events },
     });
   } catch (error) {
     console.error("Error fetching events:", error);
@@ -81,11 +81,10 @@ const deleteEventController = async (req, res) => {
       return res.status(404).json({ status: "fail", message: "Event not found." });
     }
 
-    // SAFE USER ID CHECK
-    const userId = req.user._id || req.user.id;
+    let userId = String(req.user._id || req.user.id);
 
-    // SECURITY CHECK: Only Admin can delete any event (or the original creator)
-    if (req.user.role !== "admin" && event.createdBy.toString() !== userId.toString()) {
+    // SECURITY CHECK: Only Admin or the original creator can delete
+    if (req.user.role !== "admin" && event.createdBy && String(event.createdBy) !== userId) {
       return res.status(403).json({
         status: "fail",
         message: "Access Denied: Only Admins can delete events.",
