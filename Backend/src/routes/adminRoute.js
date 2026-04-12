@@ -44,18 +44,30 @@ router.get("/all-feedback", async (req, res) => {
   }
 });
 
-// 🔥 NAYA: User se Feedback receive/save karne ki API (Jo miss ho gayi thi) 🔥
+// 🔥 NAYA: Bulletproof Feedback Save Karne Ki API 🔥
 router.post("/submit-feedback", async (req, res) => {
   try {
     const { userId, message } = req.body;
     
+    // Safely data prepare kar rahe hain (taaki crash na ho)
+    let feedbackData = { message: message };
+    
+    // Sirf tabhi userId save karenge jab wo sahi format mein ho (24 letters ki MongoDB ID)
+    if (userId && typeof userId === 'string' && userId.length === 24) {
+        feedbackData.userId = userId;
+    }
+
     // Naya feedback save kar rahe hain
-    const newFeedback = await Feedback.create({ userId, message });
+    const newFeedback = await Feedback.create(feedbackData);
     
     res.status(200).json({ success: true, message: "Feedback saved", data: newFeedback });
   } catch (error) {
     console.error("Submit Feedback Error:", error);
-    res.status(500).json({ message: "Failed to submit feedback" });
+    // 🔥 MAGIC: Ab agar database crash hua, toh Network tab me exact reason likha aayega!
+    res.status(500).json({ 
+      message: "Failed to submit feedback",
+      exactError: error.message 
+    });
   }
 });
 
