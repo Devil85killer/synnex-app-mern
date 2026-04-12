@@ -23,7 +23,8 @@ router.use("/news", newsRoutes);
 router.use("/admin", adminRoute);
 router.use("/chat", chatRoute);
 router.use("/meeting", meetingRoutes);
-
+// Email Route (Wapas add kar raha hu)
+router.post('/send-mail', sendMailController);
 // 🔥 NAYA: Complaint route ko connect kar diya (Purana send-mail hata diya)
 router.use("/complaints", complaintRoutes);
 
