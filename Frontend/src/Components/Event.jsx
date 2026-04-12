@@ -76,7 +76,6 @@ function Event() {
   const handleCreateEvent = async (e) => {
     e.preventDefault();
     try {
-      // 🔥 FIX: Yahan URL badal kar naya admin event API daal diya hai!
       const res = await axios.post('https://synnex-backend.onrender.com/api/admin/event', newEvent, {
         withCredentials: true
       });
@@ -103,7 +102,8 @@ function Event() {
               <p className="text-gray-500 mt-1">Discover and join events hosted by your alumni network.</p>
             </div>
             
-            {userRole === "admin" && (
+            {/* 🔥 FIX: Yahan Admin aur Alumni dono ko button dikhega */}
+            {(userRole === "admin" || userRole === "alumni") && (
               <button
                 onClick={() => setShowForm(!showForm)}
                 className="mt-4 sm:mt-0 bg-black text-white px-5 py-2.5 rounded-lg hover:bg-gray-800 transition shadow-md font-medium z-10"
@@ -113,7 +113,8 @@ function Event() {
             )}
           </div>
 
-          {userRole === "admin" && showForm && (
+          {/* 🔥 FIX: Yahan Admin aur Alumni dono ko form dikhega */}
+          {(userRole === "admin" || userRole === "alumni") && showForm && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
               <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Host a New Event</h2>
               <form onSubmit={handleCreateEvent} className="grid grid-cols-1 md:grid-cols-2 gap-4">
