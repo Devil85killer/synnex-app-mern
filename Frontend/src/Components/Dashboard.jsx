@@ -1,9 +1,49 @@
 import { Navigate, useNavigate } from "react-router-dom";
 import { getUserData, getLoggedIn } from "../services/authService";
+import { useEffect } from "react"; // 🔥 NAYA
+import axios from "axios"; // 🔥 NAYA
+import { ToastContainer, toast } from 'react-toastify'; // 🔥 NAYA
+import 'react-toastify/dist/ReactToastify.css'; // 🔥 NAYA
 
 function Home() {
   const loggedin = getLoggedIn();
   const navigate = useNavigate();
+
+  // 🔥 NAYA: Nayi Meeting Check Karne Aur Popup Dikhane Ka Logic
+  useEffect(() => {
+    const checkNewMeeting = async () => {
+      try {
+        const response = await axios.get('https://synnex-backend.onrender.com/api/meeting');
+        if (response.data.status === 'success' && response.data.link) {
+          const { link, time } = response.data;
+          
+          // Browser ki memory check karenge ki kya student ne ye link pehle dekh liya hai?
+          const lastSeenMeeting = localStorage.getItem('lastSeenMeeting');
+          
+          if (lastSeenMeeting !== link) {
+            // Agar link naya hai, toh Date ko mast format mein badlo
+            const meetingDate = time ? new Date(time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Check Meeting Room';
+            
+            // Popup fek ke maaro
+            toast.info(`📢 Nayi Alumni Meeting Hai!\n📅 Time: ${meetingDate}`, {
+              position: "top-center",
+              autoClose: false, // Jab tak user 'X' na dabaye, ye screen par rahega
+              theme: "dark", // Professional look ke liye
+            });
+            
+            // Yaad rakho ki is student ne ye meeting dekh li hai
+            localStorage.setItem('lastSeenMeeting', link);
+          }
+        }
+      } catch (error) {
+        console.log("No meeting fetched or server offline.");
+      }
+    };
+
+    if (loggedin) {
+      checkNewMeeting();
+    }
+  }, [loggedin]);
 
   if (!loggedin) {
     return <Navigate to="/login" />;
@@ -13,7 +53,9 @@ function Home() {
   const displayName = role === "admin" ? adminName : firstName;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full relative">
+      <ToastContainer /> {/* 🔥 BOHOT ZAROORI: Iske bina popup nahi dikhega */}
+      
       <div className="max-w-6xl mx-auto">
         
         {/* Dynamic Welcome Banner */}
@@ -80,8 +122,6 @@ function Home() {
                 Explore Jobs
               </button>
               
-              {/* 🔥 FIND ALUMNI BUTTON YAHAN SE HATA DIYA GAYA HAI 🔥 */}
-
               <button 
                 onClick={() => navigate('/events')} 
                 className="block w-full text-center bg-gray-100 text-gray-800 py-2 rounded-lg hover:bg-gray-200 transition shadow-sm font-medium"
