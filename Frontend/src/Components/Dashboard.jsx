@@ -25,7 +25,7 @@ function Home() {
             const meetingDate = time ? new Date(time).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'Check Meeting Room';
             
             // Popup fek ke maaro
-            toast.info(`📢 Nayi Alumni Meeting Hai!\n📅 Time: ${meetingDate}`, {
+            toast.info(`📢 New meeting is scheduledd please join !\n📅 Time: ${meetingDate}`, {
               position: "top-center",
               autoClose: false, // Jab tak user 'X' na dabaye, ye screen par rahega
               theme: "dark", // Professional look ke liye
