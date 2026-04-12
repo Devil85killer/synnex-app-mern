@@ -55,4 +55,15 @@ const getAllMeetings = async (req, res) => {
   }
 };
 
-module.exports = { saveMeetingLink, getMeetingLink, getAllMeetings };
+// 4. 🔥 NAYA: Meeting Delete Karne Ki API (Admin Panel ke liye)
+const deleteMeeting = async (req, res) => {
+  try {
+    await Meeting.findByIdAndDelete(req.params.id);
+    res.status(200).json({ status: "success", message: "Meeting deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+// Niche export mein deleteMeeting add kar diya hai
+module.exports = { saveMeetingLink, getMeetingLink, getAllMeetings, deleteMeeting };
