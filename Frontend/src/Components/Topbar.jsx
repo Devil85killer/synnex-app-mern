@@ -61,13 +61,14 @@ function Topbar() {
           <FaBriefcase className="mr-1.5" /> Jobs
         </Link>
 
-        {/* 🔥 Meeting aur Send Mail barabar set hain */}
+        {/* 🔥 Meeting barabar set hai */}
         <Link to="/meeting" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaVideo className="mr-1.5" /> Meeting
         </Link>
 
-        <Link to="/send-mail" className="text-sm flex items-center hover:text-blue-600 transition">
-          <FaEnvelopeOpenText className="mr-1.5" /> Send Mail
+        {/* 🔥 NAYA: Send Mail hatakar Complaint lagaya */}
+        <Link to="/complaint" className="text-sm flex items-center hover:text-red-600 transition">
+          <FaEnvelopeOpenText className="mr-1.5" /> Complaint
         </Link>
 
         <Link to="/newsletter" className="text-sm flex items-center hover:text-blue-600 transition">
@@ -77,8 +78,6 @@ function Topbar() {
         <Link to="/feedback" className="text-sm flex items-center hover:text-blue-600 transition">
           <FaCommentDots className="mr-1.5" /> Feedback
         </Link>
-
-        {/* 🔥 SEARCH ALUMNI YAHAN SE HATA DIYA GAYA HAI 🔥 */}
 
         {/* Auth Buttons */}
         <div className="flex flex-col lg:flex-row gap-2 mt-4 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-gray-200 w-full lg:w-auto">
