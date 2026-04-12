@@ -1,8 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { User } = require("../models/user"); // Path check kar lena agar alag ho toh
-const Feedback = require("../models/feedback"); // 🔥 NAYA: Apna Feedback model yahan import kiya
-
+const Feedback = require("../models/feedbackModel");
 // 🔥 APPROVE USER API 🔥
 router.put("/user/:userId/approve", async (req, res) => {
   try {
