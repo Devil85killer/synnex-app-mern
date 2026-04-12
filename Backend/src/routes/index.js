@@ -9,10 +9,10 @@ const eventRoutes = require("./eventRoutes");
 const newsRoutes = require("./newsRoutes"); 
 const adminRoute = require("./adminRoute");
 const chatRoute = require("./chatRoute");
-const { sendMailController } = require("../controllers/emailController");
-
-// 🔥 FIX: Sahi path se import kiya (kyunki dono files ek hi folder mein hain)
 const meetingRoutes = require("./meetingRoute");
+
+// 🔥 NAYA: Complaint route ko import kiya
+const complaintRoutes = require("./complaintRoutes"); 
 
 router.use("/register", registerRoute);
 router.use("/events", eventRoutes); 
@@ -22,11 +22,9 @@ router.use("/jobs", jobRoutes);
 router.use("/news", newsRoutes);
 router.use("/admin", adminRoute);
 router.use("/chat", chatRoute);
-
-// 🔥 FIX: Meeting route ko connect kar diya
 router.use("/meeting", meetingRoutes);
 
-// Email Route
-router.post('/send-mail', sendMailController);
+// 🔥 NAYA: Complaint route ko connect kar diya (Purana send-mail hata diya)
+router.use("/complaints", complaintRoutes);
 
 module.exports = router;
