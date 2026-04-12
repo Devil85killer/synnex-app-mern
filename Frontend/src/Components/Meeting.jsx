@@ -11,13 +11,16 @@ const Meeting = () => {
   
   const userRole = user?.role?.toLowerCase();
   const canGenerateLink = userRole === 'alumni' || userRole === 'admin';
-  // 🔥 Creator ka naam nikal rahe hain user context se
-  const creatorName = userRole === 'admin' ? user?.adminName : user?.firstName;
+  
+  // 🔥 FIX: User ka poora naam nikalne ka "Bulletproof" logic
+  const creatorFullName = userRole === 'admin' 
+    ? (user?.adminName || "Admin") 
+    : (user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user?.name || "Alumni"));
   
   const [meetingLink, setMeetingLink] = useState('');
   const [meetingTime, setMeetingTime] = useState(''); 
-  const [meetingReason, setMeetingReason] = useState(''); // 🔥 NAYA: Agenda State
-  const [hostName, setHostName] = useState(''); // 🔥 NAYA: Kisne banaya wo dikhane ke liye
+  const [meetingReason, setMeetingReason] = useState(''); 
+  const [hostName, setHostName] = useState(''); 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -27,7 +30,7 @@ const Meeting = () => {
         if (response.data.status === 'success') {
           if (response.data.link) setMeetingLink(response.data.link);
           if (response.data.time) setMeetingTime(response.data.time);
-          if (response.data.reason) setMeetingReason(response.data.reason); // Pura reason fetch
+          if (response.data.reason) setMeetingReason(response.data.reason); 
           if (response.data.creatorName) setHostName(response.data.creatorName);
         }
       } catch (error) {
@@ -53,11 +56,13 @@ const Meeting = () => {
       await axios.post('https://synnex-backend.onrender.com/api/meeting', {
         link: meetingLink,
         time: meetingTime,
-        reason: meetingReason, // 🔥 NAYA
-        creatorName: creatorName || "Alumni", // 🔥 NAYA
+        reason: meetingReason, 
+        creatorName: creatorFullName, // 🔥 Ab ye kabhi Unknown nahi jayega!
         role: userRole
       });
       toast.success("Meeting Broadcasted to Everyone! 🚀");
+      // 🔥 UI ko turant update karne ke liye hostName set kar rahe hain
+      setHostName(creatorFullName);
     } catch (error) {
       toast.error("Database Error: Failed to save link.");
     }
@@ -78,7 +83,7 @@ const Meeting = () => {
               </p>
             </div>
 
-            {/* 🔥 NAYA: Meeting Host Info (Student view ke liye) */}
+            {/* 🔥 Meeting Host Info (Student view ke liye) */}
             {!canGenerateLink && hostName && (
               <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg mb-6 text-sm font-medium">
                 🗣️ Hosted by: <span className="font-bold">{hostName}</span>
@@ -141,7 +146,6 @@ const Meeting = () => {
             </div>
           </div>
         ) : (
-          /* Login Check... */
           <div className="text-center py-8">
             <h1 className="text-3xl font-bold mb-4">You're Not Logged In 🔒</h1>
             <Link to="/login" className="bg-black text-white px-8 py-3 rounded-lg font-bold">Go to Login</Link>
