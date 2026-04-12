@@ -20,11 +20,12 @@ function Complaint() {
     setLoading(true);
 
     try {
-      // Yahan hum pehle wale send-mail API ka hi use kar rahe hain, bas Admin ko direct bhej rahe hain
-      await axios.post('https://synnex-backend.onrender.com/api/send-mail', {
-        to: "admin@college.com", // Ise apne actual admin email se replace kar dena backend mein
-        subject: `🚨 Portal Complaint: ${complaintData.subject}`,
-        message: `New complaint raised by ${user.firstName || 'User'} (${user.email || 'No email provided'}).\n\nIssue Details:\n${complaintData.message}`
+      // 🔥 FIX: Correctly pointing to the new complaints backend API
+      await axios.post('https://synnex-backend.onrender.com/api/complaints/submit', {
+        subject: complaintData.subject,
+        message: complaintData.message
+      }, {
+        withCredentials: true // 🔥 FIX: Required to send your JWT token/ID to the backend
       });
 
       toast.success("Complaint submitted successfully to the Admin. We will look into it! ✅");
