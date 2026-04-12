@@ -1,47 +1,58 @@
 // Backend/src/controllers/meetingController.js
 const mongoose = require("mongoose");
 
-// Ek chota sa schema meeting link aur time save karne ke liye
+// Schema update: Agenda aur Creator Name ke sath
 const meetingSchema = new mongoose.Schema({
   link: String,
-  time: String, // 🔥 NAYA: Frontend se aane wala time yahan store hoga
+  time: String,
+  reason: String,      // 🔥 NAYA: Meeting ka Agenda/Reason
+  creatorName: String, // 🔥 NAYA: Kis Alumni ne banaya
   hostRole: String,
   createdAt: { type: Date, default: Date.now }
 });
 
-// Agar model pehle se nahi bana hai toh bana lo
 const Meeting = mongoose.models.Meeting || mongoose.model("Meeting", meetingSchema);
 
-// 1. Link Save Karne Ki API (Alumni/Admin ke liye)
+// 1. Link Save Karne Ki API (Alumni/Admin)
 const saveMeetingLink = async (req, res) => {
   try {
-    const { link, time, role } = req.body; // 🔥 NAYA: 'time' ko body se nikal liya
+    const { link, time, reason, creatorName, role } = req.body;
     
-    // Purane saare links delete kar do taaki sirf latest wala bache
-    await Meeting.deleteMany({}); 
+    // 🔥 AB DELETE NAHI KARENGE! Taaki Admin dashboard me saari purani meetings ki list/history dikhe.
+    // await Meeting.deleteMany({}); 
     
-    // 🔥 NAYA: 'time' ko database mein save kar diya
-    const newMeeting = await Meeting.create({ link, time, hostRole: role });
+    const newMeeting = await Meeting.create({ link, time, reason, creatorName, hostRole: role });
     res.status(200).json({ status: "success", data: newMeeting });
   } catch (error) {
     res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
-// 2. Link Get Karne Ki API (Students ke liye)
+// 2. Link Get Karne Ki API (Students ke liye - Hamesha Latest wali dikhegi)
 const getMeetingLink = async (req, res) => {
   try {
-    const meeting = await Meeting.findOne().sort({ createdAt: -1 }); // Latest link lao
+    const meeting = await Meeting.findOne().sort({ createdAt: -1 }); // Sabse nayi (latest) wali lao
     
-    // 🔥 NAYA: Response mein 'link' ke sath 'time' bhi bhej rahe hain
     res.status(200).json({ 
       status: "success", 
       link: meeting ? meeting.link : "",
-      time: meeting ? meeting.time : "" // 🔥 NAYA
+      time: meeting ? meeting.time : "",
+      reason: meeting ? meeting.reason : "",
+      creatorName: meeting ? meeting.creatorName : ""
     });
   } catch (error) {
     res.status(500).json({ status: "fail", message: error.message });
   }
 };
 
-module.exports = { saveMeetingLink, getMeetingLink };
+// 3. Admin ke liye saari history get karne ki API (Ye aage kaam aayegi)
+const getAllMeetings = async (req, res) => {
+  try {
+    const meetings = await Meeting.find().sort({ createdAt: -1 });
+    res.status(200).json({ status: "success", data: meetings });
+  } catch (error) {
+    res.status(500).json({ status: "fail", message: error.message });
+  }
+};
+
+module.exports = { saveMeetingLink, getMeetingLink, getAllMeetings };
