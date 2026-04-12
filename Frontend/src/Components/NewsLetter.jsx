@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios"; // AXIOS IMPORT KIYA
-import { getLoggedIn, getUserRole } from "../services/authService"; // getUserRole use karenge
+import axios from "axios"; 
+import { getLoggedIn, getUserRole, getUserData } from "../services/authService"; // 🔥 getUserData add kiya
 import { Link } from "react-router-dom";
 import NotLoggedIn from "./helper/NotLoggedIn";
 import { ToastContainer, toast } from 'react-toastify';
@@ -8,23 +8,22 @@ import 'react-toastify/dist/ReactToastify.css';
 
 function NewsAndNotices() {
   const loggedIn = getLoggedIn();
+  const user = getUserData() || {}; // 🔥 Logged-in user ka poora data nikal rahe hain
   
-  // ROLE CHECK LOGIC FIX KIYA
   const role = getUserRole();
   const userRole = role?.toLowerCase();
   
-  // Yahan 'faculty' add kar diya hai taaki unhe bhi button dikhe
+  // Faculty/Admin/College roles ko posting permission
   const canPostNews = userRole === 'admin' || userRole === 'teacher' || userRole === 'faculty' || userRole === 'college';
   
   const [showForm, setShowForm] = useState(false);
-
-  // DUMMY DATA GAYA! Live list ke liye state
   const [newsList, setNewsList] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // New Notice form ke liye state
   const [newNotice, setNewNotice] = useState({
     title: "",
-    type: "", // Category ke liye
+    type: "", 
     content: ""
   });
 
@@ -32,7 +31,6 @@ function NewsAndNotices() {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        // Backend URL check kar lena agar route ka naam notices hai toh change kar dena
         let res = await axios.get('https://synnex-backend.onrender.com/api/news/all', {
           withCredentials: true 
         });
@@ -62,31 +60,38 @@ function NewsAndNotices() {
     }
   }, [loggedIn]);
 
-  // 2. CREATE NOTICE KA LIVE API CALL
+  // 2. CREATE NOTICE KA LIVE API CALL (Naam logic ke saath)
   const handlePostNews = async (e) => {
     e.preventDefault();
+    
+    // 🔥 FIX: User ka poora naam frontend se hi bhej rahe hain
+    const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : "College Admin";
+
     try {
-      const res = await axios.post('https://synnex-backend.onrender.com/api/news/create', newNotice, {
+      const res = await axios.post('https://synnex-backend.onrender.com/api/news/create', {
+        ...newNotice,
+        author: fullName // 🔥 Backend ko author name bhej diya
+      }, {
         withCredentials: true
       });
 
       // UI update bina refresh kiye
       if (res.data?.status === 'success') {
-        setNewsList([res.data.data.news, ...newsList]); // Naya notice top pe
+        setNewsList([res.data.data.news, ...newsList]); 
       } else {
         setNewsList([res.data, ...newsList]);
       }
 
       toast.success("Notice published successfully! 📢");
       setShowForm(false);
-      setNewNotice({ title: "", type: "", content: "" }); // Form reset
+      setNewNotice({ title: "", type: "", content: "" }); 
     } catch (error) {
       console.error("Error creating notice:", error);
-      toast.error("Failed to publish notice.");
+      toast.error("Failed to publish notice. Database error.");
     }
   };
 
-  // 3. DELETE NOTICE KA LIVE API CALL (For Admin)
+  // 3. DELETE NOTICE (Admin Only)
   const handleDelete = async (newsId) => {
     if (window.confirm("Are you sure you want to delete this notice?")) {
       try {
@@ -104,20 +109,18 @@ function NewsAndNotices() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8 w-full font-sans">
       <ToastContainer position="top-right" autoClose={3000} />
       
       {loggedIn ? (
         <div className="max-w-5xl mx-auto">
           
-          {/* Header Section */}
           <div className="flex flex-col sm:flex-row justify-between items-center mb-8 border-b border-gray-200 pb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">News & Notices 📢</h1>
               <p className="text-gray-500 mt-1">Stay updated with the latest college announcements.</p>
             </div>
             
-            {/* CONDITIONAL BUTTON */}
             {canPostNews && (
               <button
                 onClick={() => setShowForm(!showForm)}
@@ -128,7 +131,6 @@ function NewsAndNotices() {
             )}
           </div>
 
-          {/* Post News Form */}
           {canPostNews && showForm && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 animate-fade-in">
               <h2 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Publish an Announcement</h2>
@@ -156,20 +158,17 @@ function NewsAndNotices() {
             </div>
           )}
 
-          {/* News List */}
           <div className="space-y-6">
             {newsList.length === 0 ? (
-              <p className="text-gray-500 text-center py-10">No recent announcements.</p>
+              <p className="text-gray-500 text-center py-10 italic">No recent announcements found.</p>
             ) : (
               newsList.map((news) => (
                 <div key={news._id} className="relative bg-white p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-300">
                   
-                  {/* ADMIN DELETE BUTTON */}
                   {userRole === "admin" && (
                     <button 
                       onClick={() => handleDelete(news._id)}
                       className="absolute top-4 right-4 text-red-500 hover:text-red-700 font-bold px-2 py-1 bg-red-50 hover:bg-red-100 rounded text-sm transition"
-                      title="Delete Notice (Admin Only)"
                     >
                       Delete
                     </button>
@@ -179,15 +178,15 @@ function NewsAndNotices() {
                     <span className={`text-xs font-bold px-2 py-1 rounded-md ${news.type === 'Important' ? 'bg-red-50 text-red-700 border border-red-100' : 'bg-blue-50 text-blue-700 border border-blue-100'}`}>
                       {news.type || "Notice"}
                     </span>
-                    <span className="text-sm text-gray-500 font-medium">{new Date(news.createdAt || Date.now()).toLocaleDateString() || news.date}</span>
+                    <span className="text-sm text-gray-500 font-medium">{new Date(news.createdAt).toLocaleDateString()}</span>
                   </div>
                   
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{news.title}</h3>
-                  <p className="text-sm font-semibold text-gray-600 mb-4">
-                    By: {news.author || news.createdBy?.firstName || "College Admin"}
+                  <p className="text-sm font-semibold text-gray-600 mb-4 flex items-center">
+                    🗣️ By: <span className="text-black ml-1">{news.author || news.createdBy?.firstName || "College Admin"}</span>
                   </p>
                   
-                  <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100 whitespace-pre-line">
+                  <p className="text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100 whitespace-pre-line shadow-inner">
                     {news.content}
                   </p>
                 </div>
