@@ -14,15 +14,17 @@ const Meeting = () => {
   const canGenerateLink = userRole === 'alumni' || userRole === 'admin';
   
   const [meetingLink, setMeetingLink] = useState('');
+  const [meetingTime, setMeetingTime] = useState(''); // 🔥 NAYA: Time ke liye state
   const [loading, setLoading] = useState(false);
 
-  // Page load hote hi backend se current link layega
+  // Page load hote hi backend se current link aur time layega
   useEffect(() => {
     const fetchMeetingLink = async () => {
       try {
         const response = await axios.get('https://synnex-backend.onrender.com/api/meeting');
-        if (response.data.status === 'success' && response.data.link) {
-          setMeetingLink(response.data.link);
+        if (response.data.status === 'success') {
+          if (response.data.link) setMeetingLink(response.data.link);
+          if (response.data.time) setMeetingTime(response.data.time); // 🔥 Time bhi fetch hoga
         }
       } catch (error) {
         console.log("No active meeting found on server.");
@@ -31,26 +33,32 @@ const Meeting = () => {
     if (loggedIn) fetchMeetingLink();
   }, [loggedIn]);
 
-  // Input box mein typing/pasting handle karega
   const handleManualLinkChange = (e) => {
     setMeetingLink(e.target.value);
   };
 
   // Broadcast button dabane par ye chalega
   const handleSaveMeetingLink = async () => {
-    // 🔥 STRICT CHECK: Asli link hona hi chahiye!
     if (!meetingLink || !meetingLink.startsWith('http')) {
       toast.error("⚠️ Error: Please copy and paste a REAL Google Meet link!");
+      return;
+    }
+    
+    // 🔥 CHECK: Time select kiya hai ya nahi
+    if (!meetingTime) {
+      toast.error("⚠️ Please select a Date and Time for the meeting!");
       return;
     }
 
     setLoading(true);
     try {
+      // 🔥 NAYA: Link ke sath 'time' bhi backend bhej rahe hain
       await axios.post('https://synnex-backend.onrender.com/api/meeting', {
         link: meetingLink,
+        time: meetingTime,
         role: userRole
       });
-      toast.success("Google Meet link Broadcasted to Everyone! 🚀");
+      toast.success("Meeting Link & Time Broadcasted to Everyone! 🚀");
     } catch (error) {
       console.error("Error saving meeting:", error);
       toast.error("Database Error: Failed to save link.");
@@ -58,7 +66,6 @@ const Meeting = () => {
     setLoading(false);
   };
 
-  // Join button dabane par naye tab me meeting khulegi
   const handleJoinMeeting = () => {
     if (meetingLink) {
       toast.info("Opening Meeting Room..."); 
@@ -68,7 +75,7 @@ const Meeting = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={4000} />
       
       <div className="max-w-lg w-full p-8 bg-white rounded-xl shadow-lg border border-gray-100">
         {loggedIn ? (
@@ -77,12 +84,12 @@ const Meeting = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">Alumni Meeting Room 🎥</h2>
               <p className="text-gray-500">
                 {canGenerateLink 
-                  ? "Paste your real Google Meet link below to broadcast it." 
-                  : "Active meeting link shared by the Alumni/Admin is below."}
+                  ? "Paste link and select time to broadcast it." 
+                  : "Active meeting details shared by the Alumni/Admin are below."}
               </p>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label htmlFor="meetingLink" className="block text-sm font-semibold text-gray-700 mb-2">
                 {canGenerateLink ? "Your Secure Meeting Link" : "Active Meeting Link"}
               </label>
@@ -97,6 +104,21 @@ const Meeting = () => {
               />
             </div>
 
+            {/* 🔥 NAYA: Date and Time Picker */}
+            <div className="mb-6">
+              <label htmlFor="meetingTime" className="block text-sm font-semibold text-gray-700 mb-2">
+                Meeting Date & Time
+              </label>
+              <input
+                id="meetingTime"
+                type="datetime-local"
+                className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 focus:outline-none"
+                value={meetingTime}
+                onChange={(e) => setMeetingTime(e.target.value)}
+                readOnly={!canGenerateLink} 
+              />
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 mt-8">
               {canGenerateLink && (
                 <button
@@ -104,7 +126,7 @@ const Meeting = () => {
                   onClick={handleSaveMeetingLink}
                   disabled={loading}
                 >
-                  {loading ? "Broadcasting..." : "1. Broadcast Link"}
+                  {loading ? "Broadcasting..." : "1. Broadcast Meeting"}
                 </button>
               )}
               <button
