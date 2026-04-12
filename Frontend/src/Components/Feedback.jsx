@@ -2,28 +2,47 @@ import React, { useState } from 'react';
 import { FaCheck } from 'react-icons/fa';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import axios from 'axios';
+import { getUserData } from '../services/authService'; // 🔥 NAYA: User ID nikalne ke liye
 
 const Feedback = () => {
+  const user = getUserData() || {}; // Logged-in user ka data
   const [experienceRating, setExperienceRating] = useState(5);
   const [agree, setAgree] = useState('');
   const [feedbackComments, setFeedbackComments] = useState('');
   const [selectedOption, setSelectedOption] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleFeedbackSubmit = (e) => {
+  const handleFeedbackSubmit = async (e) => {
     e.preventDefault();
     if(!selectedOption) {
       toast.error("Please select a primary reason for using the platform.");
       return;
     }
-    // Simulate submission
-    console.log({ experienceRating, agree, feedbackComments, selectedOption });
-    toast.success("Thank you! Your feedback has been submitted successfully. 📝");
-    
-    // Reset form
-    setExperienceRating(5);
-    setAgree('');
-    setFeedbackComments('');
-    setSelectedOption('');
+
+    // 🔥 MAGIC: Saare form data ko ek sentence mein jod rahe hain Admin ke liye!
+    const combinedMessage = `Rating: ${experienceRating}/5 | Reason: ${selectedOption} | Navigability: ${agree || 'Not answered'} | Comments: ${feedbackComments || 'None'}`;
+
+    setLoading(true);
+    try {
+      // 🔥 NAYA: Asli API call jo data ko Database me bhejegi
+      await axios.post('https://synnex-backend.onrender.com/api/admin/submit-feedback', {
+        userId: user?._id, // User ki ID
+        message: combinedMessage // Judwa message
+      });
+
+      toast.success("Thank you! Your feedback has been submitted successfully. 📝");
+      
+      // Reset form
+      setExperienceRating(5);
+      setAgree('');
+      setFeedbackComments('');
+      setSelectedOption('');
+    } catch (error) {
+      toast.error("Failed to submit feedback. Backend connection error.");
+      console.error(error);
+    }
+    setLoading(false);
   };
 
   const agreeDisagreeOptions = ['Strongly Disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly Agree'];
@@ -125,10 +144,11 @@ const Feedback = () => {
           <div className="pt-4 border-t border-gray-100">
             <button
               type="submit"
-              className="w-full sm:w-auto flex justify-center items-center bg-black hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-lg transition shadow-md"
+              disabled={loading}
+              className="w-full sm:w-auto flex justify-center items-center bg-black hover:bg-gray-800 text-white font-bold py-3 px-8 rounded-lg transition shadow-md disabled:opacity-50"
             >
               <FaCheck className="mr-2" />
-              Submit Feedback
+              {loading ? "Submitting..." : "Submit Feedback"}
             </button>
           </div>
 
