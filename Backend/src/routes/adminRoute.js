@@ -3,6 +3,9 @@ const router = express.Router();
 const { User } = require("../models/user"); 
 const Feedback = require("../models/feedbackModel");
 
+// 🔥 NAYA: Complaint Model ko import kiya
+const Complaint = require("../models/complaintModel");
+
 // 🔥 APPROVE USER API 🔥
 router.put("/user/:userId/approve", async (req, res) => {
   try {
@@ -44,7 +47,21 @@ router.get("/all-feedback", async (req, res) => {
   }
 });
 
-// 🔥 NAYA: Bulletproof Feedback Save Karne Ki API 🔥
+// 🔥 NAYA: Saari Complaints Get Karne Ki API Admin Ke Liye 🔥
+router.get("/all-complaints", async (req, res) => {
+  try {
+    const complaints = await Complaint.find()
+      .populate("raisedBy", "firstName lastName email") // Jisne complaint ki uski detail aayegi
+      .sort({ createdAt: -1 }); // Latest complaint sabse upar
+
+    res.status(200).json({ data: complaints });
+  } catch (error) {
+    console.error("Error fetching complaints:", error);
+    res.status(500).json({ message: "Failed to fetch complaints" });
+  }
+});
+
+// 🔥 Bulletproof Feedback Save Karne Ki API 🔥
 router.post("/submit-feedback", async (req, res) => {
   try {
     const { userId, message } = req.body;
@@ -63,7 +80,6 @@ router.post("/submit-feedback", async (req, res) => {
     res.status(200).json({ success: true, message: "Feedback saved", data: newFeedback });
   } catch (error) {
     console.error("Submit Feedback Error:", error);
-    // 🔥 MAGIC: Ab agar database crash hua, toh Network tab me exact reason likha aayega!
     res.status(500).json({ 
       message: "Failed to submit feedback",
       exactError: error.message 
