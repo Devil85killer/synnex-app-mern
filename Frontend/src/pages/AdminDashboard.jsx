@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   UsersIcon, BriefcaseIcon, CalendarIcon, ChartBarIcon, ArrowRightOnRectangleIcon,
-  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, VideoCameraIcon
+  DocumentTextIcon, ChatBubbleLeftEllipsisIcon, VideoCameraIcon, ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -20,6 +20,7 @@ function AdminDashboard() {
   const [news, setNews] = useState([]); 
   const [feedbacks, setFeedbacks] = useState([]); 
   const [meetings, setMeetings] = useState([]);
+  const [complaints, setComplaints] = useState([]); // 🔥 NAYA: Complaints State
   const [loading, setLoading] = useState(false);
 
   // Modals States
@@ -55,6 +56,7 @@ function AdminDashboard() {
   const fetchJobs = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-jobs', { withCredentials: true }); setJobs(res.data); } catch (err) {} };
   const fetchEvents = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-events', { withCredentials: true }); setEvents(res.data); } catch (err) {} };
   const fetchNews = async () => { try { const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-news', { withCredentials: true }); setNews(res.data); } catch (err) {} };
+  
   const fetchFeedbacks = async () => { 
     try { 
       const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-feedback', { withCredentials: true }); 
@@ -73,10 +75,21 @@ function AdminDashboard() {
     } catch (err) { console.error("Meeting fetch error:", err); } 
   };
 
+  // 🔥 NAYA: Complaints Fetch Karne Ki API
+  const fetchComplaints = async () => {
+    try {
+      const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-complaints', { withCredentials: true });
+      if (res.data && Array.isArray(res.data.data)) setComplaints(res.data.data);
+      else if (Array.isArray(res.data)) setComplaints(res.data);
+      else setComplaints([]);
+    } catch (err) { console.error("Complaints fetch error:", err); }
+  };
+
   useEffect(() => {
     if (userRole === 'admin') {
       setLoading(true);
-      Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks(), fetchMeetings()]).finally(() => setLoading(false));
+      // 🔥 FIX: fetchComplaints ko bhi load hone wale list me daal diya
+      Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks(), fetchMeetings(), fetchComplaints()]).finally(() => setLoading(false));
     }
   }, [userRole]);
 
@@ -158,12 +171,11 @@ function AdminDashboard() {
     }
   };
 
-  // 🔥 NAYA: Meeting Delete karne ka function
   const handleDeleteMeeting = async (meetingId) => {
     if (window.confirm("Are you sure you want to delete this meeting history?")) {
       try {
         await axios.delete(`https://synnex-backend.onrender.com/api/meeting/${meetingId}`, { withCredentials: true });
-        setMeetings(meetings.filter(m => m._id !== meetingId)); // UI se turant hatao
+        setMeetings(meetings.filter(m => m._id !== meetingId)); 
       } catch (error) { 
         alert("Failed to delete meeting."); 
       }
@@ -210,11 +222,13 @@ function AdminDashboard() {
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100"><p className="text-gray-500 text-sm">Total Users</p><h3 className="text-3xl font-bold">{users.length}</h3></div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100"><p className="text-gray-500 text-sm">Jobs Listed</p><h3 className="text-3xl font-bold">{jobs.length}</h3></div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100"><p className="text-gray-500 text-sm">Active Events</p><h3 className="text-3xl font-bold">{events.length}</h3></div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100"><p className="text-gray-500 text-sm">Feedback Received</p><h3 className="text-3xl font-bold">{feedbacks.length}</h3></div>
+            {/* 🔥 NAYA: Complaints Dashboard Card */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-red-200 bg-red-50"><p className="text-red-500 text-sm font-bold">Pending Complaints</p><h3 className="text-3xl font-bold text-red-700">{complaints.length}</h3></div>
           </div>
         );
 
@@ -319,7 +333,47 @@ function AdminDashboard() {
           </div>
         );
 
-      // 🔥 NAYA: Meeting History Tab Ka Content
+      // 🔥 NAYA: Complaints UI Section
+      case 'complaints':
+        return (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 min-h-[400px]">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+                <ExclamationTriangleIcon className="h-7 w-7 text-red-600 mr-2" />
+                User Complaints
+              </h2>
+            </div>
+            
+            {complaints.length === 0 ? (
+              <p className="text-gray-500 p-4 text-center border-2 border-dashed border-gray-200 rounded-lg">
+                No complaints found. Everything is smooth! 🎉
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {complaints.map(c => (
+                  <div key={c._id} className="border border-red-200 p-5 rounded-lg bg-red-50 hover:bg-red-100 transition shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg text-red-900">{c.subject}</h3>
+                      <span className="text-xs font-bold px-3 py-1 bg-red-200 text-red-800 rounded-full border border-red-300">
+                        {c.status || "Pending"}
+                      </span>
+                    </div>
+                    <p className="text-gray-800 mb-4 bg-white p-3 rounded border border-red-100">{c.message}</p>
+                    
+                    <div className="text-sm text-gray-600 border-t border-red-200 pt-3 flex flex-col md:flex-row md:justify-between">
+                      <span>
+                        Reported by: <strong className="text-black">{c.raisedBy?.firstName || 'Unknown'} {c.raisedBy?.lastName || 'User'}</strong> 
+                        <span className="text-blue-600 ml-1">({c.raisedBy?.email || 'No Email'})</span>
+                      </span>
+                      <span className="mt-2 md:mt-0 font-medium">📅 {new Date(c.createdAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+
       case 'meetings':
         return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 min-h-[400px]">
@@ -332,13 +386,11 @@ function AdminDashboard() {
                   <div key={m._id} className="border border-gray-200 p-4 rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center hover:bg-gray-50 transition">
                     <div>
                       <h3 className="font-bold text-lg text-gray-900">{m.reason || "General Meetup"}</h3>
-                      {/* 🔥 "Unknown" ki jagah "Alumni" default kiya gaya hai */}
                       <p className="text-sm text-gray-600">🗣 Hosted by: <span className="font-semibold text-black">{m.creatorName || "Alumni"}</span> ({m.hostRole})</p>
                       <p className="text-xs text-gray-500 mt-1">📅 Scheduled for: {m.time ? new Date(m.time).toLocaleString() : "N/A"}</p>
                       <a href={m.link} target="_blank" rel="noreferrer" className="text-blue-500 text-sm hover:underline mt-2 inline-block">🔗 {m.link}</a>
                     </div>
                     
-                    {/* 🔥 Delete Button Add Kiya */}
                     <div className="flex flex-col items-end space-y-2 mt-4 md:mt-0">
                       <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded">Created: {new Date(m.createdAt).toLocaleDateString()}</span>
                       <button 
@@ -446,9 +498,13 @@ function AdminDashboard() {
           <button onClick={() => setActiveTab('jobs')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'jobs' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><BriefcaseIcon className="h-5 w-5 mr-3"/>Job Approvals</button>
           <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><CalendarIcon className="h-5 w-5 mr-3"/>Event Manager</button>
           <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><DocumentTextIcon className="h-5 w-5 mr-3"/>News & Notices</button>
-          <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3"/>User Feedback</button>
           
-          {/* 🔥 NAYA: Meeting History Button */}
+          {/* 🔥 NAYA: Manage Complaints Button in Sidebar */}
+          <button onClick={() => setActiveTab('complaints')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'complaints' ? 'bg-red-800 text-white' : 'text-red-400 hover:bg-red-900 hover:text-white font-bold'}`}>
+            <ExclamationTriangleIcon className="h-5 w-5 mr-3"/>Manage Complaints
+          </button>
+
+          <button onClick={() => setActiveTab('feedback')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'feedback' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><ChatBubbleLeftEllipsisIcon className="h-5 w-5 mr-3"/>User Feedback</button>
           <button onClick={() => setActiveTab('meetings')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'meetings' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
             <VideoCameraIcon className="h-5 w-5 mr-3"/>Meeting History
           </button>
