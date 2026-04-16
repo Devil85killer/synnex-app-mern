@@ -37,4 +37,30 @@ router.get("/all", checkAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// 🔥 NAYI APIs: USER TRACKER KE LIYE 🔥
+// ============================================
+
+// 🔥 1. User ki sirf apni complaints fetch karna
+router.get("/my-complaints", checkAuth, async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    // Sirf wahi complaint dhundho jo is user ne banayi hai
+    const complaints = await Complaint.find({ raisedBy: userId }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: complaints });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to fetch your complaints" });
+  }
+});
+
+// 🔥 2. User apni complaint delete kar sake
+router.delete("/:id", checkAuth, async (req, res) => {
+  try {
+    await Complaint.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: "Complaint deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete complaint" });
+  }
+});
+
 module.exports = router;
