@@ -75,7 +75,6 @@ function AdminDashboard() {
     } catch (err) { console.error("Meeting fetch error:", err); } 
   };
 
-  // 🔥 NAYA: Complaints Fetch Karne Ki API
   const fetchComplaints = async () => {
     try {
       const res = await axios.get('https://synnex-backend.onrender.com/api/admin/all-complaints', { withCredentials: true });
@@ -88,7 +87,6 @@ function AdminDashboard() {
   useEffect(() => {
     if (userRole === 'admin') {
       setLoading(true);
-      // 🔥 FIX: fetchComplaints ko bhi load hone wale list me daal diya
       Promise.all([fetchUsers(), fetchJobs(), fetchEvents(), fetchNews(), fetchFeedbacks(), fetchMeetings(), fetchComplaints()]).finally(() => setLoading(false));
     }
   }, [userRole]);
@@ -182,6 +180,25 @@ function AdminDashboard() {
     }
   };
 
+  // 🔥 NAYA: Resolve & Delete Complaint Handlers
+  const handleResolveComplaint = async (id) => {
+    if (window.confirm("Mark this complaint as Solved?")) {
+      try {
+        await axios.put(`https://synnex-backend.onrender.com/api/admin/complaint/${id}/resolve`, {}, { withCredentials: true });
+        setComplaints(complaints.map(c => c._id === id ? { ...c, status: 'Resolved' } : c));
+      } catch (error) { alert("Failed to resolve complaint."); }
+    }
+  };
+
+  const handleDeleteComplaint = async (id) => {
+    if (window.confirm("Are you sure you want to delete this complaint?")) {
+      try {
+        await axios.delete(`https://synnex-backend.onrender.com/api/admin/complaint/${id}`, { withCredentials: true });
+        setComplaints(complaints.filter(c => c._id !== id));
+      } catch (error) { alert("Failed to delete complaint."); }
+    }
+  };
+
   const viewAttendees = async (eventId) => {
     setCurrentEventId(eventId);
     setShowAttendeesModal(true);
@@ -227,8 +244,7 @@ function AdminDashboard() {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100"><p className="text-gray-500 text-sm">Jobs Listed</p><h3 className="text-3xl font-bold">{jobs.length}</h3></div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-orange-100"><p className="text-gray-500 text-sm">Active Events</p><h3 className="text-3xl font-bold">{events.length}</h3></div>
             <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100"><p className="text-gray-500 text-sm">Feedback Received</p><h3 className="text-3xl font-bold">{feedbacks.length}</h3></div>
-            {/* 🔥 NAYA: Complaints Dashboard Card */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-red-200 bg-red-50"><p className="text-red-500 text-sm font-bold">Pending Complaints</p><h3 className="text-3xl font-bold text-red-700">{complaints.length}</h3></div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-red-200 bg-red-50"><p className="text-red-500 text-sm font-bold">Pending Complaints</p><h3 className="text-3xl font-bold text-red-700">{complaints.filter(c => c.status !== 'Resolved').length}</h3></div>
           </div>
         );
 
@@ -333,7 +349,7 @@ function AdminDashboard() {
           </div>
         );
 
-      // 🔥 NAYA: Complaints UI Section
+      // 🔥 UPDATED: Complaints UI Section with Delete and Resolve Buttons
       case 'complaints':
         return (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 min-h-[400px]">
@@ -350,25 +366,51 @@ function AdminDashboard() {
               </p>
             ) : (
               <div className="space-y-4">
-                {complaints.map(c => (
-                  <div key={c._id} className="border border-red-200 p-5 rounded-lg bg-red-50 hover:bg-red-100 transition shadow-sm">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-lg text-red-900">{c.subject}</h3>
-                      <span className="text-xs font-bold px-3 py-1 bg-red-200 text-red-800 rounded-full border border-red-300">
-                        {c.status || "Pending"}
-                      </span>
+                {complaints.map(c => {
+                  const isResolved = c.status === 'Resolved';
+                  return (
+                    <div key={c._id} className={`border p-5 rounded-lg transition shadow-sm ${isResolved ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50 hover:bg-red-100'}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className={`font-bold text-lg ${isResolved ? 'text-green-900' : 'text-red-900'}`}>{c.subject}</h3>
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full border ${isResolved ? 'bg-green-200 text-green-800 border-green-300' : 'bg-red-200 text-red-800 border-red-300'}`}>
+                          {c.status || "Pending"}
+                        </span>
+                      </div>
+                      <p className={`mb-4 p-3 rounded border ${isResolved ? 'bg-white text-gray-700 border-green-100' : 'bg-white text-gray-800 border-red-100'}`}>
+                        {c.message}
+                      </p>
+                      
+                      <div className={`text-sm pt-3 flex flex-col md:flex-row md:justify-between md:items-center border-t ${isResolved ? 'border-green-200 text-gray-600' : 'border-red-200 text-gray-600'}`}>
+                        <span>
+                          Reported by: <strong className="text-black">{c.raisedBy?.firstName || 'Unknown'} {c.raisedBy?.lastName || 'User'}</strong> 
+                          <span className="text-blue-600 ml-1">({c.raisedBy?.email || 'No Email'})</span>
+                        </span>
+                        
+                        <div className="flex items-center gap-2 mt-3 md:mt-0">
+                          <span className="font-medium mr-2">📅 {new Date(c.createdAt).toLocaleString()}</span>
+                          
+                          {/* 🔥 MARK SOLVED BUTTON */}
+                          {!isResolved && (
+                            <button 
+                              onClick={() => handleResolveComplaint(c._id)} 
+                              className="bg-green-100 text-green-700 border border-green-300 hover:bg-green-200 px-3 py-1.5 rounded text-xs font-bold transition shadow-sm"
+                            >
+                              Mark Solved ✅
+                            </button>
+                          )}
+                          
+                          {/* 🔥 DELETE BUTTON */}
+                          <button 
+                            onClick={() => handleDeleteComplaint(c._id)} 
+                            className="bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 px-3 py-1.5 rounded text-xs font-bold transition shadow-sm"
+                          >
+                            Delete 🗑️
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-gray-800 mb-4 bg-white p-3 rounded border border-red-100">{c.message}</p>
-                    
-                    <div className="text-sm text-gray-600 border-t border-red-200 pt-3 flex flex-col md:flex-row md:justify-between">
-                      <span>
-                        Reported by: <strong className="text-black">{c.raisedBy?.firstName || 'Unknown'} {c.raisedBy?.lastName || 'User'}</strong> 
-                        <span className="text-blue-600 ml-1">({c.raisedBy?.email || 'No Email'})</span>
-                      </span>
-                      <span className="mt-2 md:mt-0 font-medium">📅 {new Date(c.createdAt).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -499,7 +541,6 @@ function AdminDashboard() {
           <button onClick={() => setActiveTab('events')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'events' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><CalendarIcon className="h-5 w-5 mr-3"/>Event Manager</button>
           <button onClick={() => setActiveTab('news')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'news' ? 'bg-gray-800 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}><DocumentTextIcon className="h-5 w-5 mr-3"/>News & Notices</button>
           
-          {/* 🔥 NAYA: Manage Complaints Button in Sidebar */}
           <button onClick={() => setActiveTab('complaints')} className={`flex items-center w-full p-3 rounded-lg transition ${activeTab === 'complaints' ? 'bg-red-800 text-white' : 'text-red-400 hover:bg-red-900 hover:text-white font-bold'}`}>
             <ExclamationTriangleIcon className="h-5 w-5 mr-3"/>Manage Complaints
           </button>
