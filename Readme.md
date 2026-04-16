@@ -35,12 +35,12 @@ Built with modern web technologies, Synnex features a robust Role-Based Access C
 This project was engineered by a dedicated team of four developers, each specializing in a core domain of the application lifecycle:
 
 ### 1. Karan Mahala 
-**Lead Backend Engineer (Server & Core Logic)**
-> *Architected the robust Express.js server, designed secure authentication flows, and implemented complex business logic for role management and backend security.*
-
-### 2. Rakesh Majhi 
 **Lead Frontend Engineer (UI/UX & Client Architecture)**
 > *Spearheaded the React.js frontend, crafted the highly responsive Tailwind CSS user interfaces, and built the dynamic Admin Dashboard for seamless user experience.*
+
+### 2. Rakesh Majhi 
+**Lead Backend Engineer (Server & Core Logic)**
+> *Architected the robust Express.js server, designed secure authentication flows, and implemented complex business logic for role management and backend security.*
 
 ### 3. Sourav Pradhan 
 **API & Integration Specialist (Connectivity)**
@@ -58,7 +58,7 @@ To run this project locally, follow these steps:
 
 ### Prerequisites
 - Node.js installed on your machine
-- MongoDB Atlas connection string
+- MongoDB Atlas connection string (or local MongoDB)
 
 ### 1. Clone the Repository
 ```bash
