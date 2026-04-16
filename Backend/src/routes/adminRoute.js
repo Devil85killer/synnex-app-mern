@@ -87,4 +87,34 @@ router.post("/submit-feedback", async (req, res) => {
   }
 });
 
+// ========================================================
+// 🔥 NAYI APIs: COMPLAINT KO RESOLVE AUR DELETE KARNE KI 🔥
+// ========================================================
+
+// 🔥 MARK COMPLAINT AS SOLVED 🔥
+router.put("/complaint/:id/resolve", async (req, res) => {
+  try {
+    const updatedComplaint = await Complaint.findByIdAndUpdate(
+      req.params.id,
+      { status: "Resolved" },
+      { new: true }
+    );
+    res.status(200).json({ success: true, data: updatedComplaint });
+  } catch (error) {
+    console.error("Resolve error:", error);
+    res.status(500).json({ message: "Failed to resolve complaint" });
+  }
+});
+
+// 🔥 DELETE COMPLAINT 🔥
+router.delete("/complaint/:id", async (req, res) => {
+  try {
+    await Complaint.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: "Complaint deleted" });
+  } catch (error) {
+    console.error("Delete error:", error);
+    res.status(500).json({ message: "Failed to delete complaint" });
+  }
+});
+
 module.exports = router;
