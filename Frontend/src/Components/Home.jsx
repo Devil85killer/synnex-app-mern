@@ -90,7 +90,11 @@ function Home() {
       {/* 🌟 FOOTER */}
       <footer className="bg-white border-t border-gray-200 py-10 mt-10">
         <div className="container mx-auto px-6 text-center text-gray-500 text-sm">
-          
+          </div>
+
+          <p>&copy; {new Date().getFullYear()} Synnex Alumni Network. All rights reserved.</p>
+          <p className="mt-2">Built for seamless college networking.</p>
+        </div>
           {/* Team Members Added Here */}
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-gray-700 mb-2">Developed by the SYNNEX Team</h3>
