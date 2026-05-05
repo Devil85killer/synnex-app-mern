@@ -90,6 +90,21 @@ function Home() {
       {/* 🌟 FOOTER */}
       <footer className="bg-white border-t border-gray-200 py-10 mt-10">
         <div className="container mx-auto px-6 text-center text-gray-500 text-sm">
+          
+          {/* Team Members Added Here */}
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Developed by the SYNNEX Team</h3>
+            <div className="flex flex-wrap justify-center items-center gap-2 text-sm font-medium text-gray-600">
+              <span>Jogesh</span>
+              <span className="hidden sm:inline">•</span>
+              <span>Karan</span>
+              <span className="hidden sm:inline">•</span>
+              <span>Rakesh</span>
+              <span className="hidden sm:inline">•</span>
+              <span>Sourav</span>
+            </div>
+          </div>
+
           <p>&copy; {new Date().getFullYear()} Synnex Alumni Network. All rights reserved.</p>
           <p className="mt-2">Built for seamless college networking.</p>
         </div>
